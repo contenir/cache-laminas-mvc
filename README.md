@@ -68,19 +68,8 @@ A separate `pagecache.local.php` (written by the admin) is merged on top
 in the standard Laminas config-aggregator order, so the operator's
 defaults are preserved when the admin flips the master toggle.
 
-### Wire the listener at bootstrap
-
-The Module registers the service-manager factory but does **not** attach
-the listener — your Site needs one line in `Application\Module::onBootstrap`:
-
-```php
-public function onBootstrap(\Laminas\Mvc\MvcEvent $event): void
-{
-    $sm = $event->getApplication()->getServiceManager();
-    $sm->get(\Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy::class)
-       ->attach($event->getApplication()->getEventManager());
-}
-```
+The Module attaches the listener for you on bootstrap — there's nothing
+to wire in your Site's own `Application\Module`.
 
 ### Optional: auth-aware cache keys
 

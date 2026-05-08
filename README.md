@@ -80,6 +80,44 @@ will pull it via `setAuthenticationService()` and the role identifier
 will be mixed into the cache key. Without it, the role-suffix branch
 silently no-ops — fine for purely-public sites.
 
+### CSRF-aware caching
+
+A page that renders a `Laminas\Form\Element\Csrf` token is per-user and
+must not be cached — the token is bound to the user's session, and a
+cached HTML page would replay one user's token to the next.
+
+When `laminas/laminas-form` is installed, the package's
+`ConfigProvider` registers a delegator on the `FormElement` view
+helper that fires `CacheStrategy::EVENT_DISABLE` whenever a `Csrf`
+element is rendered. The listener attaches to that event on the same
+identifier(s) it uses for `dispatch`/`finish`; on receipt it flips an
+internal `disabled` flag, and `onFinish` skips storage. Pages with
+forms render normally; only the *caching* of those pages is suppressed.
+
+To opt out:
+
+```php
+// config/autoload/pagecache.local.php
+return [
+    'pagecache' => [
+        'disable_on_csrf' => false,
+    ],
+];
+```
+
+When `disable_on_csrf` is false the delegator returns the original
+`FormElement` helper untouched (no overhead, no event firing).
+
+For non-Laminas-form CSRF rendering, or any other reason a page must
+opt out at runtime, fire the event yourself from anywhere in the
+request lifecycle:
+
+```php
+$em->trigger(\Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy::EVENT_DISABLE);
+```
+
+…or grab the listener service and call `disable()` directly.
+
 ## How it works
 
 `Listener\CacheStrategy` typically attaches to `MvcEvent::EVENT_DISPATCH`
@@ -91,6 +129,12 @@ stores the final response when the active options say to cache it.
 `pagecache.options.cache = false` disables the listener entirely for
 the request — useful as an admin-controlled kill switch and as a
 per-route override for endpoints that must never be cached.
+
+`CacheStrategy::EVENT_DISABLE` (`'pagecache.disable'`) lets per-render
+opt-out signals reach the listener: anything in the request that knows
+the response is not safe to cache (CSRF tokens, flash messages,
+authenticated banners) can fire the event and the listener will
+short-circuit `onFinish` for that request.
 
 ## Purging
 

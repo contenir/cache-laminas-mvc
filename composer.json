@@ -14,11 +14,15 @@
     "require-dev": {
         "laminas/laminas-authentication": "^2.0",
         "laminas/laminas-cache-storage-adapter-memory": "^2.0",
+        "laminas/laminas-form": "^3.0",
+        "laminas/laminas-view": "^2.0",
         "phpunit/phpunit": "^11.0",
         "squizlabs/php_codesniffer": "^3.10"
     },
     "suggest": {
-        "laminas/laminas-authentication": "Optional. When a Laminas\\Authentication\\AuthenticationServiceInterface is registered in the container, the listener mixes the authenticated identity's role into the cache key so two roles never share a cached page."
+        "laminas/laminas-authentication": "Optional. When a Laminas\\Authentication\\AuthenticationServiceInterface is registered in the container, the listener mixes the authenticated identity's role into the cache key so two roles never share a cached page.",
+        "laminas/laminas-form": "Optional. Enables the bundled FormElement delegator which fires CacheStrategy::EVENT_DISABLE whenever a Csrf element is rendered, preventing CSRF-bearing pages from being cached.",
+        "laminas/laminas-view": "Required transitively by laminas-form when the FormElement delegator is in use."
     },
     "autoload": {
         "psr-4": { "Contenir\\Cache\\Laminas\\Mvc\\": "src/" }

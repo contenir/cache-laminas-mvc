@@ -33,9 +33,12 @@ use Laminas\Cache\Storage\StorageInterface;
  */
 class CacheStrategy implements ListenerAggregateInterface
 {
+    public const EVENT_DISABLE = 'pagecache.disable';
+
     protected StorageInterface $cache;
     protected ?string $key = null;
     protected ?int $ttl = null;
+    protected bool $disabled = false;
     protected array $activeOptions = [];
     protected array $options = [
         'cache_with_query'     => false,
@@ -89,6 +92,20 @@ class CacheStrategy implements ListenerAggregateInterface
         return $this;
     }
 
+    /**
+     * Mark the current request as uncacheable.
+     *
+     * Once flipped, onFinish will not store the response and any subsequent
+     * shared listener attached to EVENT_DISABLE on this same request is a
+     * no-op. Reset between requests by re-resolving the listener (singleton
+     * scope means the consuming app should call this only on requests that
+     * really shouldn't cache, e.g. CSRF-bearing pages).
+     */
+    public function disable(): void
+    {
+        $this->disabled = true;
+    }
+
     public function attach(EventManagerInterface $events, $priority = 1): void
     {
         $sharedManager = $events->getSharedManager();
@@ -102,6 +119,17 @@ class CacheStrategy implements ListenerAggregateInterface
                     $configPriority ?: $priority
                 );
             }
+        }
+
+        foreach (array_keys($this->configuration) as $identifier) {
+            $sharedManager->attach(
+                $identifier,
+                self::EVENT_DISABLE,
+                function (): void {
+                    $this->disable();
+                },
+                100,
+            );
         }
     }
 
@@ -122,7 +150,7 @@ class CacheStrategy implements ListenerAggregateInterface
 
     public function onDispatch(MvcEvent $event): bool|Response
     {
-        if (php_sapi_name() == 'cli') {
+        if ($this->disabled || php_sapi_name() == 'cli') {
             return false;
         }
 
@@ -217,7 +245,7 @@ class CacheStrategy implements ListenerAggregateInterface
 
     public function onFinish(MvcEvent $event): void
     {
-        if (! $this->key) {
+        if ($this->disabled || ! $this->key) {
             return;
         }
 

@@ -12,27 +12,28 @@ use Laminas\Http\Headers;
 use Laminas\Http\PhpEnvironment\Response;
 use Laminas\Mvc\MvcEvent;
 use Laminas\Stdlib\RequestInterface;
-use Psr\SimpleCache\CacheInterface;
+use Laminas\Cache\Storage\StorageInterface;
 
 /**
  * Page Caching Strategy Listener.
  *
- * Lifted from the Swinburne Site's Application\Listener\CacheStrategy.
  * The master enable/disable is driven by the standard pagecache config:
  * `pagecache.options.cache` set to `false` (per-environment, per-route, or
- * via admin writing pagecache.local.php) bypasses the cache entirely.
+ * via an admin tool writing pagecache.local.php) bypasses the cache
+ * entirely.
  *
- * Purging is *not* this listener's responsibility. Admin4 talks to the cache
- * storage backend directly (it has the same Site config, knows the adapter),
- * so there's no need for a signal-and-flush dance on the Site's request path.
+ * Purging is *not* this listener's responsibility. The consuming admin
+ * tool talks to the cache storage backend directly (same Site config,
+ * known adapter), so there's no signal-and-flush dance on the request
+ * path.
  *
- * See the Swinburne original for the full caching-options reference. The
- * routes/options config shape is unchanged — existing Site configs port
- * across by moving them under the 'pagecache' key the ConfigProvider declares.
+ * The `routes`/`options` config shape under the `pagecache` key follows
+ * the long-standing `cache_with_*` / `make_id_with_*` flag layout so
+ * existing Site configs port over unchanged.
  */
 class CacheStrategy implements ListenerAggregateInterface
 {
-    protected CacheInterface $cache;
+    protected StorageInterface $cache;
     protected ?string $key = null;
     protected ?int $ttl = null;
     protected array $activeOptions = [];
@@ -67,7 +68,7 @@ class CacheStrategy implements ListenerAggregateInterface
         return $this;
     }
 
-    public function setCache(CacheInterface $cache): static
+    public function setCache(StorageInterface $cache): static
     {
         $this->cache = $cache;
 
@@ -155,9 +156,9 @@ class CacheStrategy implements ListenerAggregateInterface
 
         $this->ttl = $this->activeOptions['ttl'];
 
-        if ($this->cache->has($this->key)) {
+        if ($this->cache->hasItem($this->key)) {
             $response = $event->getApplication()->getResponse();
-            $hit      = $this->cache->get($this->key);
+            $hit      = $this->cache->getItem($this->key);
             $headers  = $hit->getHeaders();
 
             self::sanitizeHitHeaders($headers);
@@ -225,7 +226,16 @@ class CacheStrategy implements ListenerAggregateInterface
 
         self::sanitizeStoreHeaders($headers);
 
-        $this->cache->set($this->key, $response, $this->ttl);
+        $options = $this->cache->getOptions();
+        $previousTtl = $options->getTtl();
+        if ($this->ttl !== null) {
+            $options->setTtl($this->ttl);
+        }
+        try {
+            $this->cache->setItem($this->key, $response);
+        } finally {
+            $options->setTtl($previousTtl);
+        }
     }
 
     /**

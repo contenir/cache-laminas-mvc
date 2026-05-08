@@ -6,18 +6,18 @@ namespace Contenir\Cache\Laminas\Mvc\Factory;
 
 use Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy;
 use Laminas\Authentication\AuthenticationServiceInterface;
-use Laminas\Cache\Psr\SimpleCache\SimpleCacheDecorator;
+use Laminas\Cache\Storage\StorageInterface;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
 
 /**
  * Factory for the page-cache listener.
  *
- * Pulls per-event attachment config from config['events'][CacheStrategy::class]
- * (matches the legacy in-Site shape) and the cache backend / options / routes
- * from config['pagecache']. The master enable flag is just
- * config[pagecache][options][cache] — same key admin's pagecache.local.php
- * writes to.
+ * Pulls per-event attachment config from config[events][CacheStrategy::class]
+ * and the cache backend, options and route overrides from config[pagecache].
+ * The master enable flag is config[pagecache][options][cache], which is
+ * also the key consumed by any admin tool that writes pagecache.local.php
+ * to flip caching at runtime.
  */
 final class CacheStrategyFactory
 {
@@ -37,11 +37,17 @@ final class CacheStrategyFactory
             );
         }
 
-        $outputCacheStorage = $container->get($cacheServiceId);
-        $outputCache        = new SimpleCacheDecorator($outputCacheStorage);
+        $storage = $container->get($cacheServiceId);
+        if (! $storage instanceof StorageInterface) {
+            throw new RuntimeException(sprintf(
+                'contenir/cache-laminas-mvc: service "%s" must resolve to a Laminas\Cache\Storage\StorageInterface; got %s.',
+                $cacheServiceId,
+                is_object($storage) ? $storage::class : gettype($storage),
+            ));
+        }
 
         $listener = (new CacheStrategy($configuration))
-            ->setCache($outputCache)
+            ->setCache($storage)
             ->setOptions($options['options'] ?? [])
             ->setRoutes($options['routes'] ?? []);
 

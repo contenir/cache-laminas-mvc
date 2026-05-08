@@ -42,13 +42,12 @@ final class ConfigProvider
     {
         return [
             // Service ID of the Laminas\Cache\Storage\StorageInterface backend
-            // to wrap with a SimpleCacheDecorator. Required at runtime.
+            // the listener should read and write through. Required at runtime.
             'cache'   => null,
 
-            // Default per-request options. Mirrors the legacy CacheStrategy
-            // shape so existing Site configs port over unchanged. The
-            // `cache` flag is the master enable switch — admin's
-            // pagecache.local.php overrides it without touching siblings.
+            // Default per-request options. The `cache` flag is the master
+            // enable switch; an admin tool flipping pagecache.local.php
+            // overrides it without touching siblings.
             'options' => [
                 'cache_with_query'     => false,
                 'cache_with_post'      => false,
@@ -65,8 +64,8 @@ final class ConfigProvider
                 'priority'             => null,
             ],
 
-            // Route patterns (regex => options-overrides). Same shape as the
-            // legacy in-Site config.
+            // Route patterns (regex => options-overrides) layered on top of
+            // the defaults at request time when the path matches.
             'routes'  => [],
         ];
     }

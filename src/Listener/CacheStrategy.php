@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Contenir\Cache\Laminas\Mvc\Listener;
 
-use Laminas\Authentication\AuthenticationService;
+use Laminas\Authentication\AuthenticationServiceInterface;
 use Laminas\EventManager\EventManagerInterface;
 use Laminas\EventManager\ListenerAggregateInterface;
 use Laminas\Http\Header\HeaderInterface;
@@ -53,10 +53,18 @@ class CacheStrategy implements ListenerAggregateInterface
     ];
     protected array $routes = [];
 
+    protected ?AuthenticationServiceInterface $authService = null;
+
     public function __construct(
-        protected AuthenticationService $authService,
         protected array $configuration,
     ) {
+    }
+
+    public function setAuthenticationService(AuthenticationServiceInterface $authService): static
+    {
+        $this->authService = $authService;
+
+        return $this;
     }
 
     public function setCache(CacheInterface $cache): static
@@ -178,7 +186,7 @@ class CacheStrategy implements ListenerAggregateInterface
         foreach (['query', 'post', 'files', 'session', 'cookie'] as $variable) {
             switch ($variable) {
                 case 'session':
-                    $identity = $this->authService->getIdentity();
+                    $identity = $this->authService?->getIdentity();
                     if ($identity) {
                         $value .= $identity->getRoleId();
                     }

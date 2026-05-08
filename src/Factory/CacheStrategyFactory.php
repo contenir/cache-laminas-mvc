@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Contenir\Cache\Laminas\Mvc\Factory;
 
 use Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy;
-use Laminas\Authentication\AuthenticationService;
+use Laminas\Authentication\AuthenticationServiceInterface;
 use Laminas\Cache\Psr\SimpleCache\SimpleCacheDecorator;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
@@ -27,8 +27,6 @@ final class CacheStrategyFactory
 
         $configuration = $globalConfiguration['events'][CacheStrategy::class] ?? [];
 
-        $authService = $container->get(AuthenticationService::class);
-
         $options = $globalConfiguration['pagecache'] ?? [];
 
         $cacheServiceId = $options['cache'] ?? null;
@@ -42,9 +40,15 @@ final class CacheStrategyFactory
         $outputCacheStorage = $container->get($cacheServiceId);
         $outputCache        = new SimpleCacheDecorator($outputCacheStorage);
 
-        return (new CacheStrategy($authService, $configuration))
+        $listener = (new CacheStrategy($configuration))
             ->setCache($outputCache)
             ->setOptions($options['options'] ?? [])
             ->setRoutes($options['routes'] ?? []);
+
+        if ($container->has(AuthenticationServiceInterface::class)) {
+            $listener->setAuthenticationService($container->get(AuthenticationServiceInterface::class));
+        }
+
+        return $listener;
     }
 }

@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace Contenir\Cache\Laminas\Mvc\Listener;
 
 use Laminas\Authentication\AuthenticationServiceInterface;
+use Laminas\Cache\Storage\StorageInterface;
 use Laminas\EventManager\EventManagerInterface;
 use Laminas\EventManager\ListenerAggregateInterface;
 use Laminas\Http\Header\HeaderInterface;
 use Laminas\Http\Headers;
 use Laminas\Http\PhpEnvironment\Response;
+use Laminas\Http\Request as HttpRequest;
 use Laminas\Mvc\MvcEvent;
 use Laminas\Stdlib\RequestInterface;
-use Laminas\Cache\Storage\StorageInterface;
 
 /**
  * Page Caching Strategy Listener.
@@ -155,7 +156,21 @@ class CacheStrategy implements ListenerAggregateInterface
         }
 
         $request = $event->getRequest();
-        $path    = $request->getUri()->getPath();
+
+        if (! $request instanceof HttpRequest) {
+            return false;
+        }
+
+        if (! in_array($request->getMethod(), [HttpRequest::METHOD_GET, HttpRequest::METHOD_HEAD], true)) {
+            return false;
+        }
+
+        $headers = $request->getHeaders();
+        if ($headers->has('Range') || $headers->has('Authorization')) {
+            return false;
+        }
+
+        $path = $request->getUri()->getPath();
 
         $lastMatchingRegexp = null;
         foreach ($this->routes ?? [] as $regexp => $conf) {
@@ -204,13 +219,29 @@ class CacheStrategy implements ListenerAggregateInterface
     }
 
     /**
-     * Make an id depending on REQUEST_URI and superglobal arrays (depending on options)
+     * Build the cache key for the current request.
      *
-     * @return string|bool a cache id (string), false if the cache should have not to be used
+     * Always includes host + path + Accept-Encoding (so multi-host
+     * deployments don't cross-pollute and gzipped responses don't leak
+     * to clients that didn't ask for them). Also includes the role
+     * suffix for an authenticated identity if an AuthenticationService
+     * is wired, and md5(serialize) of any superglobal whose
+     * `make_id_with_*` flag is true and whose `cache_with_*` flag
+     * permits caching at all.
+     *
+     * @return string|bool a cache id (string), false if the cache should not be used
      */
     protected function makeCacheKey(RequestInterface $request): string|bool
     {
-        $value = $request->getUri()->getPath();
+        $uri   = $request->getUri();
+        $value = (string) $uri->getHost() . $uri->getPath();
+
+        if ($request instanceof HttpRequest) {
+            $headers = $request->getHeaders();
+            if ($headers->has('Accept-Encoding')) {
+                $value .= '|enc:' . $headers->get('Accept-Encoding')->getFieldValue();
+            }
+        }
 
         foreach (['query', 'post', 'files', 'session', 'cookie'] as $variable) {
             switch ($variable) {
@@ -250,7 +281,12 @@ class CacheStrategy implements ListenerAggregateInterface
         }
 
         $response = $event->getResponse();
-        $headers  = $response->getHeaders();
+
+        if (! $response instanceof Response || $response->getStatusCode() !== 200) {
+            return;
+        }
+
+        $headers = $response->getHeaders();
 
         self::sanitizeStoreHeaders($headers);
 

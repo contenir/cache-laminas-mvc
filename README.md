@@ -136,6 +136,51 @@ the response is not safe to cache (CSRF tokens, flash messages,
 authenticated banners) can fire the event and the listener will
 short-circuit `onFinish` for that request.
 
+## What's in the cache key
+
+The key is `md5()` of:
+
+1. **Host** — `$request->getUri()->getHost()`. Multi-host deployments
+   never cross-pollute.
+2. **Path** — `$request->getUri()->getPath()`.
+3. **`Accept-Encoding`** request header value — so a gzipped response
+   stored against a `gzip`-accepting client is never served to a client
+   that didn't advertise gzip support.
+4. **Authenticated role suffix** — `$identity->getRoleId()` when an
+   `AuthenticationServiceInterface` service is registered and an
+   identity is present. No service registered ⇒ this branch no-ops
+   (fine for purely-public sites).
+5. **Superglobal hashes** — `md5(serialize($vars))` for each of
+   `query`, `post`, `files`, `cookie` whose `make_id_with_*` flag is
+   true. Whose presence with `cache_with_*` set false short-circuits
+   caching entirely for the request.
+
+Anything *not* in this list — `User-Agent`, `Referer`, custom `X-*`
+headers, third-party tracking cookies your app never reads — is
+**invisible to the cache by design**. The cache assumes the response
+is a pure function of the inputs above. If a controller varies its
+response on something outside that set (e.g. UA-sniffing for mobile
+markup) without keying on it, that's a poisoning bug in the
+controller, not the cache.
+
+## What's never cached
+
+The listener short-circuits in `onDispatch` for any of:
+
+- non-`GET`/`HEAD` request methods (so file-upload `POST`s don't even
+  buffer through the cache layer)
+- `Range:` request header present (don't cache 206 partial responses
+  as if they were full)
+- `Authorization:` request header present (per-user credentials ⇒
+  per-user response)
+
+…and in `onFinish` for any response with a status code other than
+`200 OK` (catches `304`, `301`/`302` redirects, `404`/`5xx` errors).
+
+These are unconditional — there is no config flag to turn them off.
+If you have a route that genuinely needs to cache a non-200 response,
+that's a different design problem than this listener is built for.
+
 ## Purging
 
 Purging is *not* this listener's responsibility. Admin tooling that

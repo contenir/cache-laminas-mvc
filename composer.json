@@ -1,6 +1,6 @@
 {
-  "name": "contenir/cache-laminas-mvc",
-  "description": "Laminas MVC adapter for contenir/cache — MvcEvent page-cache listener driven by the standard pagecache config.",
+  "name": "contenir/contenir-cache-laminas-mvc",
+  "description": "Laminas MVC page-cache adapter for Contenir CMS — MvcEvent page-cache listener driven by the standard pagecache config.",
   "type": "library",
   "license": "MIT",
   "require": {
@@ -22,6 +22,9 @@
     "laminas/laminas-view": "^2.35",
     "php-db/phpdb-qa-tools": "0.1.x-dev",
     "phpunit/phpunit": "^11.5.42"
+  },
+  "replace": {
+    "contenir/cache-laminas-mvc": "self.version"
   },
   "suggest": {
     "laminas/laminas-authentication": "Optional. When a Laminas\\Authentication\\AuthenticationServiceInterface is registered in the container, the listener mixes the authenticated identity's role into the cache key so two roles never share a cached page.",
@@ -74,7 +77,7 @@
       "module": "Contenir\\Cache\\Laminas\\Mvc"
     },
     "branch-alias": {
-      "dev-main": "2.1.x-dev"
+      "dev-main": "2.2.x-dev"
     }
   },
   "minimum-stability": "dev",

@@ -85,3 +85,16 @@ When the container has no MVC `Application` service, the delegator returns
 the original `FormElement` helper (before: an error on helper creation). When
 the delegated factory does not build a `FormElement`, it throws
 `UnexpectedValueException` (before: a `TypeError`).
+
+## Package renamed in 2.2
+
+From 2.2, the package is published as `contenir/contenir-cache-laminas-mvc`.
+It declares `replace` for `contenir/cache-laminas-mvc`, so the two can never
+be installed together. Switch the requirement:
+
+```bash
+composer remove contenir/cache-laminas-mvc && composer require contenir/contenir-cache-laminas-mvc:^2.2
+```
+
+No code changes are needed: namespaces, classes and the module name are
+unchanged.

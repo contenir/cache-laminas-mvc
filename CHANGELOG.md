@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.2.0] - Unreleased
+
+### Changed
+
+- Renamed from `contenir/cache-laminas-mvc` to
+  `contenir/contenir-cache-laminas-mvc`. The package declares `replace` for
+  the old name; require `contenir/contenir-cache-laminas-mvc` instead. See
+  [UPGRADE-2.0.md](UPGRADE-2.0.md).
+- The README and composer description no longer describe this package as an
+  adapter for `contenir/cache`: it never required or used that package.
+
 ## [2.1.0] - Unreleased
 
 ### Added

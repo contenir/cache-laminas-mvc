@@ -1,5 +1,8 @@
 # contenir/cache-laminas-mvc
 
+[![Continuous Integration](https://github.com/contenir/cache-laminas-mvc/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/contenir/cache-laminas-mvc/actions/workflows/continuous-integration.yml)
+[![codecov](https://codecov.io/gh/contenir/cache-laminas-mvc/graph/badge.svg)](https://codecov.io/gh/contenir/cache-laminas-mvc)
+
 Laminas MVC adapter for [`contenir/cache`](https://github.com/contenir/cache).
 
 A page-cache `MvcEvent` listener with the legacy `cache_with_*` /
@@ -14,7 +17,24 @@ in-band purge signal on the request path.
 composer require contenir/cache-laminas-mvc
 ```
 
+Requires PHP 8.3, 8.4 or 8.5, laminas-mvc 3.7+, laminas-cache 3.12+ and
+laminas-servicemanager 3.22+ or 4. The 0.x releases, which support PHP 8.1,
+remain available from the `0.x` branch and `v0.*` tags; see
+[UPGRADE-2.0.md](UPGRADE-2.0.md).
+
 The Module is auto-registered by `laminas/laminas-component-installer`.
+
+## Public API
+
+| Class | Purpose |
+| --- | --- |
+| `Module` | Laminas module: `getConfig()` returns the `ConfigProvider` config; `onBootstrap()` attaches the listener. `attachListener($events, $listener)` does the attaching. |
+| `ConfigProvider` | `__invoke()`, `getDependencies()`, `getPageCacheDefaults()`, `getViewHelperConfig()`. |
+| `Factory\CacheStrategyFactory` | Builds the listener from `config[events][CacheStrategy::class]` and `config[pagecache]`. |
+| `Listener\CacheStrategy` | The listener: `attach()`, `detach()`, `onDispatch()`, `onFinish()`, `disable()`, `setCache()`, `setOptions()`, `setRoutes()`, `setAuthenticationService()`, and the `EVENT_DISABLE` constant. |
+| `View\Helper\Delegator\FormElementDisableCacheDelegator` | Fires `EVENT_DISABLE` when a `Csrf` element is rendered. |
+
+All classes are `final`.
 
 ## Configure
 
@@ -64,12 +84,36 @@ return [
 ];
 ```
 
+The factory throws a `RuntimeException` when `pagecache.cache` is not a
+non-empty service ID, or when that service is not a
+`Laminas\Cache\Storage\StorageInterface`. Malformed entries are skipped:
+event identifiers and event names that are not strings, options without a
+string name, and route overrides that are not arrays. An event priority that
+is not an integer falls back to the `attach()` priority. An event name with no
+matching `on*()` listener method (only `dispatch` and `finish` exist) throws
+an `InvalidArgumentException` from `attach()`.
+
+`options.ttl` may be an integer or numeric string; anything else leaves the
+storage's own TTL in place.
+
 A separate `pagecache.local.php` (written by the admin) is merged on top
 in the standard Laminas config-aggregator order, so the operator's
 defaults are preserved when the admin flips the master toggle.
 
 The Module attaches the listener for you on bootstrap — there's nothing
 to wire in your Site's own `Application\Module`.
+
+### Console and tests
+
+The listener never caches under the `cli` SAPI, so console tools and your
+application's functional tests always see live responses. The SAPI is the
+listener's second constructor argument and defaults to `PHP_SAPI`; build it
+yourself with another value only when you need to exercise caching from the
+CLI:
+
+```php
+$listener = (new CacheStrategy($events, sapi: 'fpm-fcgi'))->setCache($storage);
+```
 
 ### Optional: auth-aware cache keys
 
@@ -78,7 +122,10 @@ not be shared between roles, register a service for
 `Laminas\Authentication\AuthenticationServiceInterface`. The factory
 will pull it via `setAuthenticationService()` and the role identifier
 will be mixed into the cache key. Without it, the role-suffix branch
-silently no-ops — fine for purely-public sites.
+silently no-ops — fine for purely-public sites. An identity that has no
+`getRoleId()` method (for example a plain username string), or whose role is
+not a scalar, makes the page uncacheable for that request, since its content
+may be personal.
 
 ### CSRF-aware caching
 
@@ -105,8 +152,9 @@ return [
 ];
 ```
 
-When `disable_on_csrf` is false the delegator returns the original
-`FormElement` helper untouched (no overhead, no event firing).
+When `disable_on_csrf` is false, or the container has no MVC `Application`
+service, the delegator returns the original `FormElement` helper untouched
+(no overhead, no event firing).
 
 For non-Laminas-form CSRF rendering, or any other reason a page must
 opt out at runtime, fire the event yourself from anywhere in the
@@ -149,7 +197,8 @@ The key is `md5()` of:
 4. **Authenticated role suffix** — `$identity->getRoleId()` when an
    `AuthenticationServiceInterface` service is registered and an
    identity is present. No service registered ⇒ this branch no-ops
-   (fine for purely-public sites).
+   (fine for purely-public sites). An identity without a usable role
+   ⇒ the request is not cached.
 5. **Superglobal hashes** — `md5(serialize($vars))` for each of
    `query`, `post`, `files`, `cookie` whose `make_id_with_*` flag is
    true. Whose presence with `cache_with_*` set false short-circuits
@@ -174,6 +223,12 @@ The listener short-circuits in `onDispatch` for any of:
 - `Authorization:` request header present (per-user credentials ⇒
   per-user response)
 
+- a disabled listener, a missing cache storage, or the `cli` SAPI
+
+A stored entry that is not a `Laminas\Http\Response`, or an application
+response that is not a `Laminas\Http\PhpEnvironment\Response`, is treated as
+a miss, and the fresh response replaces the entry.
+
 …and in `onFinish` for any response with a status code other than
 `200 OK` (catches `304`, `301`/`302` redirects, `404`/`5xx` errors).
 
@@ -187,3 +242,22 @@ Purging is *not* this listener's responsibility. Admin tooling that
 wants to clear cached pages (or specific keys) talks to the same cache
 storage backend directly — the Site config tells it which adapter the
 listener is wrapping.
+
+## Development
+
+The QA toolchain is [php-db/phpdb-qa-tools](https://github.com/php-db/phpdb-qa-tools).
+[Mago](https://mago.carthage.software/) is a standalone binary, installed
+separately (`brew install mago`).
+
+```bash
+composer check             # everything below
+composer cs-check          # mago format --check && mago lint
+composer static-analysis   # mago analyze
+composer test              # unit suite: collaborators doubled, no I/O
+composer test-integration  # integration suite: real event manager, memory cache, service and helper managers
+composer test-coverage     # both suites, clover.xml for Codecov
+```
+
+## License
+
+MIT. See [LICENSE](LICENSE).

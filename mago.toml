@@ -1,0 +1,24 @@
+extends = "vendor/php-db/phpdb-qa-tools/mago.toml"
+php-version = "8.3.0"
+
+[source]
+paths = ["src", "tests"]
+includes = ["vendor"]
+
+[formatter]
+# Keep `(new Foo())->bar()`: CI formats under each job's PHP version, and the
+# unparenthesised form PHP 8.4+ allows does not parse on 8.3, the minimum.
+parentheses-around-new-in-member-access = true
+
+[linter.rules]
+# The shared base excludes "test/"; this repository keeps its suites under "tests/".
+# CacheStrategy predates Mago and was already over the class-level size and
+# complexity thresholds: request filtering, key building, storage and header
+# sanitising all live in the one listener. Splitting it is a design
+# change left to the maintainers (see the 2.0 PR's suggested follow-ups).
+too-many-methods = { exclude = ["tests/", "src/Listener/CacheStrategy.php"] }
+cyclomatic-complexity = { exclude = ["src/Listener/CacheStrategy.php"] }
+kan-defect = { exclude = ["src/Listener/CacheStrategy.php"] }
+
+[analyzer]
+excludes = ["tests"]

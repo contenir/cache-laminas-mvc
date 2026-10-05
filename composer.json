@@ -1,46 +1,76 @@
 {
-    "name": "contenir/cache-laminas-mvc",
-    "description": "Laminas MVC adapter for contenir/cache — MvcEvent page-cache listener driven by the standard pagecache config.",
-    "type": "library",
-    "license": "MIT",
-    "require": {
-        "php": "^8.1 || ^8.2 || ^8.3",
-        "laminas/laminas-cache": "^3.0 || ^4.0",
-        "laminas/laminas-eventmanager": "^3.0",
-        "laminas/laminas-http": "^2.0",
-        "laminas/laminas-mvc": "^3.4",
-        "laminas/laminas-servicemanager": "^3.0 || ^4.0"
-    },
-    "require-dev": {
-        "laminas/laminas-authentication": "^2.0",
-        "laminas/laminas-cache-storage-adapter-memory": "^2.0",
-        "laminas/laminas-form": "^3.0",
-        "laminas/laminas-view": "^2.0",
-        "phpunit/phpunit": "^11.0",
-        "squizlabs/php_codesniffer": "^3.10"
-    },
-    "suggest": {
-        "laminas/laminas-authentication": "Optional. When a Laminas\\Authentication\\AuthenticationServiceInterface is registered in the container, the listener mixes the authenticated identity's role into the cache key so two roles never share a cached page.",
-        "laminas/laminas-form": "Optional. Enables the bundled FormElement delegator which fires CacheStrategy::EVENT_DISABLE whenever a Csrf element is rendered, preventing CSRF-bearing pages from being cached.",
-        "laminas/laminas-view": "Required transitively by laminas-form when the FormElement delegator is in use."
-    },
-    "autoload": {
-        "psr-4": { "Contenir\\Cache\\Laminas\\Mvc\\": "src/" }
-    },
-    "autoload-dev": {
-        "psr-4": { "Contenir\\Cache\\Laminas\\Mvc\\Tests\\": "tests/" }
-    },
-    "extra": {
-        "laminas": {
-            "module": "Contenir\\Cache\\Laminas\\Mvc"
-        }
-    },
-    "scripts": {
-        "test": "phpunit",
-        "cs": "phpcs",
-        "cs-fix": "phpcbf"
-    },
-    "config": {
-        "sort-packages": true
+  "name": "contenir/cache-laminas-mvc",
+  "description": "Laminas MVC adapter for contenir/cache — MvcEvent page-cache listener driven by the standard pagecache config.",
+  "type": "library",
+  "license": "MIT",
+  "require": {
+    "php": "~8.3.0 || ~8.4.0 || ~8.5.0",
+    "laminas/laminas-cache": "^3.12 || ^4.0",
+    "laminas/laminas-eventmanager": "^3.13",
+    "laminas/laminas-http": "^2.19",
+    "laminas/laminas-mvc": "^3.7",
+    "laminas/laminas-servicemanager": "^3.22 || ^4.0",
+    "laminas/laminas-stdlib": "^3.19",
+    "psr/container": "^1.1 || ^2.0"
+  },
+  "require-dev": {
+    "laminas/laminas-authentication": "^2.16",
+    "laminas/laminas-cache-storage-adapter-memory": "^2.3 || ^3.0",
+    "laminas/laminas-form": "^3.20",
+    "laminas/laminas-i18n": "^2.26",
+    "laminas/laminas-view": "^2.35",
+    "php-db/phpdb-qa-tools": "0.1.x-dev",
+    "phpunit/phpunit": "^11.5.42"
+  },
+  "suggest": {
+    "laminas/laminas-authentication": "Optional. When a Laminas\\Authentication\\AuthenticationServiceInterface is registered in the container, the listener mixes the authenticated identity's role into the cache key so two roles never share a cached page.",
+    "laminas/laminas-form": "Optional. Enables the bundled FormElement delegator which fires CacheStrategy::EVENT_DISABLE whenever a Csrf element is rendered, preventing CSRF-bearing pages from being cached.",
+    "laminas/laminas-view": "Required transitively by laminas-form when the FormElement delegator is in use."
+  },
+  "autoload": {
+    "psr-4": {
+      "Contenir\\Cache\\Laminas\\Mvc\\": "src/"
     }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Contenir\\Cache\\Laminas\\Mvc\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "check": [
+      "@cs-check",
+      "@static-analysis",
+      "@test",
+      "@test-integration"
+    ],
+    "cs-check": [
+      "mago format --check",
+      "mago lint"
+    ],
+    "cs-fix": [
+      "mago format",
+      "mago lint --fix"
+    ],
+    "static-analysis": "mago analyze",
+    "test": "phpunit --colors=always --testsuite unit",
+    "test-integration": "phpunit --colors=always --testsuite integration",
+    "test-coverage": "phpunit --colors=always --coverage-clover clover.xml"
+  },
+  "config": {
+    "platform": {
+      "php": "8.3.99"
+    },
+    "sort-packages": true
+  },
+  "extra": {
+    "laminas": {
+      "module": "Contenir\\Cache\\Laminas\\Mvc"
+    },
+    "branch-alias": {
+      "dev-main": "2.0.x-dev"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
 }

@@ -17,18 +17,6 @@ final class ConfigProvider
     /**
      * @return array<string, mixed>
      */
-    public function __invoke(): array
-    {
-        return [
-            'service_manager' => $this->getDependencies(),
-            'pagecache'       => $this->getPageCacheDefaults(),
-            'view_helpers'    => $this->getViewHelperConfig(),
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
     public function getDependencies(): array
     {
         return [
@@ -46,7 +34,7 @@ final class ConfigProvider
         return [
             // Service ID of the Laminas\Cache\Storage\StorageInterface backend
             // the listener should read and write through. Required at runtime.
-            'cache'           => null,
+            'cache' => null,
 
             // When true (default), the bundled FormElement delegator fires
             // CacheStrategy::EVENT_DISABLE whenever a Laminas Csrf form
@@ -58,7 +46,7 @@ final class ConfigProvider
             // Default per-request options. The `cache` flag is the master
             // enable switch; an admin tool flipping pagecache.local.php
             // overrides it without touching siblings.
-            'options'         => [
+            'options' => [
                 'cache_with_query'     => false,
                 'cache_with_post'      => false,
                 'cache_with_session'   => false,
@@ -76,7 +64,7 @@ final class ConfigProvider
 
             // Route patterns (regex => options-overrides) layered on top of
             // the defaults at request time when the path matches.
-            'routes'          => [],
+            'routes' => [],
         ];
     }
 
@@ -99,6 +87,18 @@ final class ConfigProvider
                     View\Helper\Delegator\FormElementDisableCacheDelegator::class,
                 ],
             ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function __invoke(): array
+    {
+        return [
+            'service_manager' => $this->getDependencies(),
+            'pagecache'       => $this->getPageCacheDefaults(),
+            'view_helpers'    => $this->getViewHelperConfig(),
         ];
     }
 }

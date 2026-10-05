@@ -12,6 +12,8 @@ by all Contenir 2.x packages, and final classes. See
 
 ### Changed
 
+- `LICENSE` names Contenir as the copyright holder, in line with the other
+  Contenir packages, and uses the standard MIT wording.
 - Requires PHP 8.3, 8.4 or 8.5, laminas-mvc 3.7+, laminas-cache 3.12+,
   laminas-eventmanager 3.13+, laminas-http 2.19+ and laminas-servicemanager
   3.22+ or 4. `laminas/laminas-stdlib` and `psr/container` are now declared

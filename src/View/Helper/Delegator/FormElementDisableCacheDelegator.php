@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Contenir\Cache\Laminas\Mvc\View\Helper\Delegator;
 
-use Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy;
-use Laminas\EventManager\EventManagerInterface;
+use Contenir\Cache\Laminas\Mvc\View\Helper\FormCsrfDisableCache;
 use Laminas\Form\Element\Csrf;
-use Laminas\Form\ElementInterface;
 use Laminas\Form\View\Helper\FormElement;
 use Laminas\Mvc\ApplicationInterface;
-use Override;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use UnexpectedValueException;
@@ -21,9 +18,14 @@ use function is_scalar;
 use function sprintf;
 
 /**
- * Delegator for the FormElement view helper that fires CacheStrategy::EVENT_DISABLE
- * whenever a Csrf element is rendered, so the page-cache listener does not
- * store a response containing a session-bound token.
+ * Delegator for the FormElement view helper that routes Csrf elements to the
+ * FormCsrfDisableCache helper, which fires CacheStrategy::EVENT_DISABLE before
+ * rendering, so the page-cache listener does not store a response containing
+ * a session-bound token.
+ *
+ * It returns the helper the factory built, so `formRow()` and anything else
+ * that expects a FormElement instance keeps getting one; only that helper's
+ * Csrf class mapping changes.
  *
  * Toggleable via config[pagecache][disable_on_csrf]. When false, or when the
  * container has no MVC `Application` to trigger the event on, the delegator
@@ -37,11 +39,6 @@ use function sprintf;
  */
 final class FormElementDisableCacheDelegator
 {
-    private static function application(mixed $service): ?ApplicationInterface
-    {
-        return $service instanceof ApplicationInterface ? $service : null;
-    }
-
     private static function entry(mixed $config, string $key): mixed
     {
         return is_array($config) ? $config[$key] ?? null : null;
@@ -88,7 +85,6 @@ final class FormElementDisableCacheDelegator
      * @throws UnexpectedValueException When the delegated factory did not build a FormElement helper.
      *
      * @mago-expect analysis:unused-parameter The service manager's delegator signature passes $name and $options; neither is needed.
-     * @mago-expect analysis:extend-final-class laminas-form 3 marks FormElement `@final` but not `final`; dropping the subclass is a design change left to the maintainers.
      */
     public function __invoke(
         ContainerInterface $container,
@@ -96,29 +92,16 @@ final class FormElementDisableCacheDelegator
         callable $callback,
         ?array $options = null,
     ): FormElement {
-        $original    = self::helper($callback());
-        $application = self::isEnabled($container) && $container->has('Application')
-            ? self::application($container->get('Application'))
-            : null;
+        $original = self::helper($callback());
 
-        if (null === $application) {
-            return $original;
+        if (
+            self::isEnabled($container)
+            && $container->has('Application')
+            && $container->get('Application') instanceof ApplicationInterface
+        ) {
+            $original->addClass(Csrf::class, FormCsrfDisableCache::class);
         }
 
-        return new class($application->getEventManager()) extends FormElement {
-            public function __construct(
-                private readonly EventManagerInterface $events,
-            ) {}
-
-            #[Override]
-            public function render(ElementInterface $element): string
-            {
-                if ($element instanceof Csrf) {
-                    $this->events->trigger(CacheStrategy::EVENT_DISABLE);
-                }
-
-                return parent::render($element);
-            }
-        };
+        return $original;
     }
 }

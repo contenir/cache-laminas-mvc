@@ -4,11 +4,26 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [2.1.0] - Unreleased
 
 ### Added
 
 - Infection mutation testing in CI, MSI 100%.
+- `View\Helper\FormCsrfDisableCache` and `Factory\FormCsrfDisableCacheFactory`:
+  the helper fires `CacheStrategy::EVENT_DISABLE`, then renders a `Csrf`
+  element through `formhidden`. `ConfigProvider::getViewHelperConfig()`
+  registers its factory.
+
+### Changed
+
+- `FormElementDisableCacheDelegator` no longer extends laminas-form's
+  `@final` `FormElement` helper. It returns the helper the factory built,
+  mapping the `Csrf` element class to `FormCsrfDisableCache`, instead of
+  replacing it with a subclass. Behaviour is unchanged: rendering a `Csrf`
+  element through `formElement()`, `formRow()`, `formCollection()` or
+  `form()` still disables caching for the page, and other elements render
+  as before. Type and class mappings configured on the factory-built helper
+  are now kept.
 
 ## [2.0.0] - Unreleased
 

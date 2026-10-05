@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Contenir\Cache\Laminas\Mvc\Tests\Unit\View\Helper\Delegator;
 
-use Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy;
 use Contenir\Cache\Laminas\Mvc\Tests\TestAsset\Container\InMemoryContainer;
 use Contenir\Cache\Laminas\Mvc\View\Helper\Delegator\FormElementDisableCacheDelegator;
-use Laminas\EventManager\EventManagerInterface;
+use Contenir\Cache\Laminas\Mvc\View\Helper\FormCsrfDisableCache;
 use Laminas\Form\Element\Csrf;
-use Laminas\Form\Element\Text;
 use Laminas\Form\View\Helper\FormElement;
 use Laminas\Mvc\ApplicationInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -55,23 +53,12 @@ final class FormElementDisableCacheDelegatorTest extends TestCase
      */
     #[Test]
     #[DataProvider('enabledConfigProvider')]
-    public function decoratesTheHelperWhenCsrfDisablingIsOn(array $services): void
+    public function mapsCsrfElementsToTheDisableCacheHelperWhenCsrfDisablingIsOn(array $services): void
     {
-        $original = new FormElement();
+        $original = $this->createMock(FormElement::class);
+        $original->expects($this->once())->method('addClass')->with(Csrf::class, FormCsrfDisableCache::class);
 
-        static::assertNotSame($original, $this->delegate(
-            [...$services, 'Application' => $this->application($this->createStub(EventManagerInterface::class))],
-            $original,
-        ));
-    }
-
-    #[Test]
-    public function doesNotTriggerTheDisableEventForOtherElements(): void
-    {
-        $events = $this->createMock(EventManagerInterface::class);
-        $events->expects($this->never())->method('trigger');
-
-        $this->delegate(['Application' => $this->application($events)], new FormElement())->render(new Text('name'));
+        $this->delegate([...$services, 'Application' => $this->application()], $original);
     }
 
     #[Test]
@@ -88,51 +75,47 @@ final class FormElementDisableCacheDelegatorTest extends TestCase
     }
 
     #[Test]
-    #[DataProvider('disabledSettingProvider')]
-    public function returnsTheOriginalHelperWhenCsrfDisablingIsSwitchedOff(mixed $setting): void
+    public function returnsTheHelperTheFactoryBuiltWhenCsrfDisablingIsOn(): void
     {
         $original = new FormElement();
+
+        static::assertSame($original, $this->delegate(['Application' => $this->application()], $original));
+    }
+
+    #[Test]
+    #[DataProvider('disabledSettingProvider')]
+    public function returnsTheOriginalHelperUntouchedWhenCsrfDisablingIsSwitchedOff(mixed $setting): void
+    {
+        $original = $this->untouchedHelper();
 
         static::assertSame($original, $this->delegate(
             [
                 'config'      => ['pagecache' => ['disable_on_csrf' => $setting]],
-                'Application' => $this->application($this->createStub(EventManagerInterface::class)),
+                'Application' => $this->application(),
             ],
             $original,
         ));
     }
 
     #[Test]
-    public function returnsTheOriginalHelperWhenTheApplicationServiceIsNotAnMvcApplication(): void
+    public function returnsTheOriginalHelperUntouchedWhenTheApplicationServiceIsNotAnMvcApplication(): void
     {
-        $original = new FormElement();
+        $original = $this->untouchedHelper();
 
         static::assertSame($original, $this->delegate(['Application' => new stdClass()], $original));
     }
 
     #[Test]
-    public function returnsTheOriginalHelperWithoutAnApplicationService(): void
+    public function returnsTheOriginalHelperUntouchedWithoutAnApplicationService(): void
     {
-        $original = new FormElement();
+        $original = $this->untouchedHelper();
 
         static::assertSame($original, $this->delegate([], $original));
     }
 
-    #[Test]
-    public function triggersTheDisableEventWhenRenderingACsrfElement(): void
+    private function application(): ApplicationInterface
     {
-        $events = $this->createMock(EventManagerInterface::class);
-        $events->expects($this->once())->method('trigger')->with(CacheStrategy::EVENT_DISABLE);
-
-        $this->delegate(['Application' => $this->application($events)], new FormElement())->render(new Csrf('csrf'));
-    }
-
-    private function application(EventManagerInterface $events): ApplicationInterface
-    {
-        $application = $this->createStub(ApplicationInterface::class);
-        $application->method('getEventManager')->willReturn($events);
-
-        return $application;
+        return $this->createStub(ApplicationInterface::class);
     }
 
     /**
@@ -145,5 +128,13 @@ final class FormElementDisableCacheDelegatorTest extends TestCase
             FormElement::class,
             static fn(): FormElement => $original,
         );
+    }
+
+    private function untouchedHelper(): FormElement
+    {
+        $helper = $this->createMock(FormElement::class);
+        $helper->expects($this->never())->method('addClass');
+
+        return $helper;
     }
 }

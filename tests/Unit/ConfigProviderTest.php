@@ -33,6 +33,29 @@ final class ConfigProviderTest extends TestCase
     }
 
     #[Test]
+    public function defaultsEveryPerRequestOptionToOffWithNoTtlOrPriority(): void
+    {
+        static::assertSame(
+            [
+                'cache_with_query'     => false,
+                'cache_with_post'      => false,
+                'cache_with_session'   => false,
+                'cache_with_files'     => false,
+                'cache_with_cookie'    => false,
+                'make_id_with_query'   => false,
+                'make_id_with_post'    => false,
+                'make_id_with_session' => false,
+                'make_id_with_files'   => false,
+                'make_id_with_cookie'  => false,
+                'cache'                => false,
+                'ttl'                  => null,
+                'priority'             => null,
+            ],
+            (new ConfigProvider())->getPageCacheDefaults()['options'],
+        );
+    }
+
+    #[Test]
     public function defaultsToCachingOffWithCsrfProtectionOnAndNoBackend(): void
     {
         $defaults = (new ConfigProvider())->getPageCacheDefaults();

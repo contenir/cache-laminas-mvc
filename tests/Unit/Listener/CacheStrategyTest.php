@@ -9,6 +9,7 @@ use Contenir\Cache\Laminas\Mvc\Tests\TestAsset\Identity\RoleIdentity;
 use Contenir\Cache\Laminas\Mvc\Tests\Trait\MvcEventTrait;
 use InvalidArgumentException;
 use Laminas\Authentication\AuthenticationServiceInterface;
+use Laminas\Cache\Exception\RuntimeException as CacheRuntimeException;
 use Laminas\Cache\Storage\Adapter\AdapterOptions;
 use Laminas\Cache\Storage\StorageInterface;
 use Laminas\EventManager\EventManagerInterface;
@@ -31,6 +32,8 @@ use stdClass;
 use function array_keys;
 use function array_map;
 use function array_unique;
+use function md5;
+use function sprintf;
 
 #[Group('unit')]
 #[Group('cache')]
@@ -59,6 +62,13 @@ final class CacheStrategyTest extends TestCase
                 true,
             ],
             'numeric route pattern matches' => [['cache' => true], [404 => ['cache' => false]], '/404', false],
+            'route after an unmatched one'  => [
+                ['cache' => true],
+                ['^/x' => ['cache' => true], '^/a' => ['cache' => false]],
+                '/a',
+                false,
+            ],
+            'route without a cache flag'    => [['cache' => true], ['^/a' => ['ttl' => 5]], '/a', true],
         ];
     }
 
@@ -98,6 +108,24 @@ final class CacheStrategyTest extends TestCase
             'role that is not a scalar' => [new RoleIdentity(['admin'])],
             'role that is null'         => [new RoleIdentity(null)],
         ];
+    }
+
+    #[Test]
+    public function attachesAtPriorityOneByDefaultWhenTheConfiguredOneIsNotAnInteger(): void
+    {
+        $listener   = new CacheStrategy([Application::class => ['dispatch' => null]]);
+        $priorities = [];
+        $shared     = $this->createStub(SharedEventManagerInterface::class);
+        $shared->method('attach')
+            ->willReturnCallback(static function (string $id, string $event, callable $callback, int $priority) use (
+                &$priorities,
+            ): void {
+                $priorities[$event] = $priority;
+            });
+
+        $listener->attach($this->eventsWith($shared));
+
+        static::assertSame(1, $priorities['dispatch']);
     }
 
     #[Test]
@@ -206,6 +234,15 @@ final class CacheStrategyTest extends TestCase
                 $this->event($this->request()),
             ),
         );
+    }
+
+    #[Test]
+    public function doesNotReadTheStorageWhenItHoldsNoEntryForTheKey(): void
+    {
+        $storage = $this->missingStorage();
+        $storage->expects($this->never())->method('getItem');
+
+        $this->listener($storage)->onDispatch($this->event($this->request()));
     }
 
     #[Test]
@@ -339,6 +376,26 @@ final class CacheStrategyTest extends TestCase
     }
 
     #[Test]
+    public function keepsEarlierRoutesWhenMoreAreAdded(): void
+    {
+        $keys    = [];
+        $storage = $this->createStub(StorageInterface::class);
+        $storage->method('hasItem')
+            ->willReturnCallback(static function (string $key) use (&$keys): bool {
+                $keys[] = $key;
+
+                return false;
+            });
+        $listener = $this->listener($storage, ['cache' => true], ['^/a' => ['cache' => false]]);
+        $listener->setRoutes(['^/b' => ['cache' => false]]);
+
+        $listener->onDispatch($this->event($this->request('http://example.com/a')));
+        $listener->onDispatch($this->event($this->request('http://example.com/b')));
+
+        static::assertSame([], $keys);
+    }
+
+    #[Test]
     public function keepsTheStorageTtlWhenNoneIsConfigured(): void
     {
         $options = new AdapterOptions(['ttl' => 30]);
@@ -367,6 +424,12 @@ final class CacheStrategyTest extends TestCase
             $this->keyFor($this->request()),
             $this->keyFor($this->request(), auth: $this->auth(null)),
         );
+    }
+
+    #[Test]
+    public function keysAPlainRequestOnItsHostThenItsPath(): void
+    {
+        static::assertSame(md5('example.com/page'), $this->keyFor($this->request('http://example.com/page')));
     }
 
     #[Test]
@@ -400,6 +463,17 @@ final class CacheStrategyTest extends TestCase
         static::assertNotSame(
             $this->keyFor($this->request(), auth: $this->auth(new RoleIdentity('admin'))),
             $this->keyFor($this->request(), auth: $this->auth(new RoleIdentity('member'))),
+        );
+    }
+
+    #[Test]
+    public function keysOnThePathAlongsideTheAcceptEncoding(): void
+    {
+        $headers = ['Accept-Encoding' => 'gzip'];
+
+        static::assertNotSame(
+            $this->keyFor($this->request('http://example.com/page', headers: $headers)),
+            $this->keyFor($this->request('http://example.com/other', headers: $headers)),
         );
     }
 
@@ -482,9 +556,31 @@ final class CacheStrategyTest extends TestCase
         $listener = new CacheStrategy([Application::class => ['route' => 1]]);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('No listener method');
+        $this->expectExceptionMessage(sprintf(
+            'No listener method %s::onRoute() for the configured event "route".',
+            CacheStrategy::class,
+        ));
 
         $listener->attach($this->eventsWith($this->createStub(SharedEventManagerInterface::class)));
+    }
+
+    #[Test]
+    public function restoresTheStorageTtlWhenStoringFails(): void
+    {
+        $options = new AdapterOptions(['ttl' => 30]);
+        $storage = $this->createStub(StorageInterface::class);
+        $storage->method('hasItem')->willReturn(false);
+        $storage->method('getOptions')->willReturn($options);
+        $storage->method('setItem')->willThrowException(new CacheRuntimeException('backend down'));
+        $listener = $this->listener($storage, ['cache' => true, 'ttl' => 600]);
+        $listener->onDispatch($this->event($this->request()));
+
+        try {
+            $listener->onFinish($this->finishEvent($this->okResponse()));
+            static::fail('Expected the storage failure to propagate.');
+        } catch (CacheRuntimeException) {
+            static::assertSame(30, $options->getTtl());
+        }
     }
 
     #[Test]
@@ -493,10 +589,11 @@ final class CacheStrategyTest extends TestCase
         $stored = $this->okResponse('<p>cached</p>');
         $stored->getHeaders()
             ->addHeaders([
+                'Cache-Control' => 'private',
                 'Content-Type'  => 'text/html',
+                'Vary'          => 'User-Agent',
                 'Pragma'        => 'no-cache',
                 'Expires'       => 'Thu, 01 Jan 1970 00:00:00 GMT',
-                'Cache-Control' => 'private',
                 'X-PK-Cache'    => 'MISS',
             ]);
         $stored->getHeaders()->addHeader(new SetCookie('a', '1'));
@@ -510,15 +607,15 @@ final class CacheStrategyTest extends TestCase
 
         static::assertSame(
             [
-                'Content-Type'  => 'text/html',
-                'Cache-Control' => 'no-cache',
-                'Vary'          => 'Accept-Encoding, Cookie',
-                'X-PK-Cache'    => 'HIT',
+                'headers'       => "Content-Type: text/html\r\n"
+                    . "Cache-Control: no-cache\r\n"
+                    . "Vary: Accept-Encoding, Cookie\r\n"
+                    . "X-PK-Cache: HIT\r\n",
                 'body'          => '<p>cached</p>',
                 'same response' => true,
             ],
             [
-                ...$application->getHeaders()->toArray(),
+                'headers'       => $application->getHeaders()->toString(),
                 'body'          => $application->getContent(),
                 'same response' => $result === $application,
             ],
@@ -532,15 +629,20 @@ final class CacheStrategyTest extends TestCase
         $storage  = $this->recordingStorage($stored);
         $listener = $this->listener($storage);
         $response = $this->okResponse();
-        $response->getHeaders()->addHeaders(['Vary' => 'User-Agent', 'Content-Type' => 'text/html']);
+        $response->getHeaders()
+            ->addHeaders([
+                'Vary'         => 'User-Agent',
+                'Content-Type' => 'text/html',
+                'X-PK-Cache'   => 'HIT',
+            ]);
         $response->getHeaders()->addHeader(new SetCookie('session', 'secret'));
 
         $listener->onDispatch($this->event($this->request()));
         $listener->onFinish($this->finishEvent($response));
 
         static::assertSame(
-            [['Content-Type' => 'text/html', 'Vary' => 'Accept-Encoding, Cookie', 'X-PK-Cache' => 'MISS']],
-            array_map(static fn(HttpResponse $r): array => $r->getHeaders()->toArray(), $stored),
+            ["Content-Type: text/html\r\nVary: Accept-Encoding, Cookie\r\nX-PK-Cache: MISS\r\n"],
+            array_map(static fn(HttpResponse $r): string => $r->getHeaders()->toString(), $stored),
         );
     }
 

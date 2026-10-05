@@ -84,7 +84,10 @@ final class CacheStrategyFactoryTest extends TestCase
     public function requiresTheCacheBackendServiceId(array $services): void
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('config[pagecache][cache] must be the service ID');
+        $this->expectExceptionMessage(
+            'contenir/cache-laminas-mvc: config[pagecache][cache] must be the service ID of a'
+                . ' Laminas\\Cache\\Storage\\StorageInterface backend.',
+        );
 
         (new CacheStrategyFactory())(new InMemoryContainer($services));
     }

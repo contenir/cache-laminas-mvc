@@ -1,0 +1,52 @@
+{
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "source": {
+        "directories": ["src"]
+    },
+    "timeout": 10,
+    "threads": "max",
+    "logs": {
+        "text": "infection.log",
+        "summary": "summary.log",
+        "stryker": {
+            "badge": "/^(main|master)$/"
+        }
+    },
+    "mutators": {
+        "@default": true,
+        // header_remove() acts on PHP's own pending header list, which the CLI
+        // SAPI that PHPUnit runs under never keeps (headers_list() is always
+        // empty there), so dropping the call or its caller cannot be observed.
+        "FunctionCallRemoval": {
+            "ignore": ["Contenir\\Cache\\Laminas\\Mvc\\Listener\\CacheStrategy::clearEmittedHeaders"]
+        },
+        "MethodCallRemoval": {
+            "ignoreSourceCodeByRegex": ["self::clearEmittedHeaders\\('Pragma', 'Expires'\\);"]
+        },
+        // `is_scalar($x) && (bool) $x`: the && operator already yields a bool,
+        // so the cast is redundant.
+        "CastBool": {
+            "ignoreSourceCodeByRegex": ["return .*is_scalar\\(\\$\\w+\\) && \\(bool\\) \\$\\w+;"]
+        },
+        // Concatenation already turns a null host or path into "", so the
+        // (string) casts in the cache key are redundant.
+        "CastString": {
+            "ignoreSourceCodeByRegex": ["\\$value = \\(string\\) \\$uri->getHost\\(\\) \\. \\(string\\) \\$uri->getPath\\(\\);"]
+        },
+        // Headers::get() returns an ArrayIterator over a list, so its keys are
+        // 0..n either way; and after the loop the fall-through only reaches a
+        // null HeaderInterface check that does nothing for an ArrayIterator.
+        "FalseValue": {
+            "ignore": ["Contenir\\Cache\\Laminas\\Mvc\\Listener\\CacheStrategy::stripHeader"]
+        },
+        "ReturnRemoval": {
+            "ignore": ["Contenir\\Cache\\Laminas\\Mvc\\Listener\\CacheStrategy::stripHeader"],
+            // Without a matching route the fall-through looks up
+            // $this->routes[null], i.e. the "" pattern; that pattern matches
+            // every path, so it cannot exist unmatched and the result is the
+            // same options.
+            "ignoreSourceCodeByRegex": ["return \\$this->options;"]
+        }
+    },
+    "staticAnalysisTool": "mago"
+}

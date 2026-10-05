@@ -1,9 +1,13 @@
-# contenir/cache-laminas-mvc
+# contenir/contenir-cache-laminas-mvc
 
-[![Continuous Integration](https://github.com/contenir/cache-laminas-mvc/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/contenir/cache-laminas-mvc/actions/workflows/continuous-integration.yml)
-[![codecov](https://codecov.io/gh/contenir/cache-laminas-mvc/graph/badge.svg)](https://codecov.io/gh/contenir/cache-laminas-mvc)
+Formerly `contenir/cache-laminas-mvc`; the old package is abandoned in favour of this one.
 
-Laminas MVC adapter for [`contenir/cache`](https://github.com/contenir/cache).
+[![Continuous Integration](https://github.com/contenir/contenir-cache-laminas-mvc/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/contenir/contenir-cache-laminas-mvc/actions/workflows/continuous-integration.yml)
+[![codecov](https://codecov.io/gh/contenir/contenir-cache-laminas-mvc/graph/badge.svg)](https://codecov.io/gh/contenir/contenir-cache-laminas-mvc)
+
+Laminas MVC page-cache adapter for [Contenir CMS](https://github.com/contenir).
+It stands alone: it stores pages through `laminas/laminas-cache` and does not
+require [`contenir/contenir-cache`](https://github.com/contenir/contenir-cache).
 
 A page-cache `MvcEvent` listener with the legacy `cache_with_*` /
 `make_id_with_*` shape preserved, driven by the standard `pagecache`
@@ -14,7 +18,7 @@ in-band purge signal on the request path.
 ## Install
 
 ```bash
-composer require contenir/cache-laminas-mvc
+composer require contenir/contenir-cache-laminas-mvc
 ```
 
 Requires PHP 8.3, 8.4 or 8.5, laminas-mvc 3.7+, laminas-cache 3.12+ and

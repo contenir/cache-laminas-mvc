@@ -31,8 +31,10 @@ The Module is auto-registered by `laminas/laminas-component-installer`.
 | `Module` | Laminas module: `getConfig()` returns the `ConfigProvider` config; `onBootstrap()` attaches the listener. `attachListener($events, $listener)` does the attaching. |
 | `ConfigProvider` | `__invoke()`, `getDependencies()`, `getPageCacheDefaults()`, `getViewHelperConfig()`. |
 | `Factory\CacheStrategyFactory` | Builds the listener from `config[events][CacheStrategy::class]` and `config[pagecache]`. |
+| `Factory\FormCsrfDisableCacheFactory` | Builds `View\Helper\FormCsrfDisableCache` from the `Application` event manager and the `formhidden` helper. |
 | `Listener\CacheStrategy` | The listener: `attach()`, `detach()`, `onDispatch()`, `onFinish()`, `disable()`, `setCache()`, `setOptions()`, `setRoutes()`, `setAuthenticationService()`, and the `EVENT_DISABLE` constant. |
-| `View\Helper\Delegator\FormElementDisableCacheDelegator` | Fires `EVENT_DISABLE` when a `Csrf` element is rendered. |
+| `View\Helper\Delegator\FormElementDisableCacheDelegator` | Maps `Csrf` elements on the `FormElement` helper to `View\Helper\FormCsrfDisableCache`. |
+| `View\Helper\FormCsrfDisableCache` | Fires `EVENT_DISABLE`, then renders a `Csrf` element through `formhidden`. |
 
 All classes are `final`.
 
@@ -135,8 +137,13 @@ cached HTML page would replay one user's token to the next.
 
 When `laminas/laminas-form` is installed, the package's
 `ConfigProvider` registers a delegator on the `FormElement` view
-helper that fires `CacheStrategy::EVENT_DISABLE` whenever a `Csrf`
-element is rendered. The listener attaches to that event on the same
+helper that maps the `Csrf` element class to the package's
+`FormCsrfDisableCache` helper. That helper fires
+`CacheStrategy::EVENT_DISABLE`, then renders the element through
+`formhidden` exactly as laminas-form does, so `formElement()`, `formRow()`,
+`formCollection()` and `form()` all mark the page uncacheable. The delegator
+keeps the `FormElement` instance laminas-form built, so anything that
+expects one (`formRow()` does) still gets it. The listener attaches to that event on the same
 identifier(s) it uses for `dispatch`/`finish`; on receipt it flips an
 internal `disabled` flag, and `onFinish` skips storage. Pages with
 forms render normally; only the *caching* of those pages is suppressed.
@@ -154,7 +161,9 @@ return [
 
 When `disable_on_csrf` is false, or the container has no MVC `Application`
 service, the delegator returns the original `FormElement` helper untouched
-(no overhead, no event firing).
+(no overhead, no event firing). A `Csrf` element rendered directly with
+`formHidden()` or `formInput()`, bypassing `FormElement`, does not fire the
+event.
 
 For non-Laminas-form CSRF rendering, or any other reason a page must
 opt out at runtime, fire the event yourself from anywhere in the

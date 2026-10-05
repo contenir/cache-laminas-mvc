@@ -6,8 +6,10 @@ namespace Contenir\Cache\Laminas\Mvc\Tests\Unit;
 
 use Contenir\Cache\Laminas\Mvc\ConfigProvider;
 use Contenir\Cache\Laminas\Mvc\Factory\CacheStrategyFactory;
+use Contenir\Cache\Laminas\Mvc\Factory\FormCsrfDisableCacheFactory;
 use Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy;
 use Contenir\Cache\Laminas\Mvc\View\Helper\Delegator\FormElementDisableCacheDelegator;
+use Contenir\Cache\Laminas\Mvc\View\Helper\FormCsrfDisableCache;
 use Laminas\Form\View\Helper\FormElement;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -67,10 +69,13 @@ final class ConfigProviderTest extends TestCase
     }
 
     #[Test]
-    public function delegatesTheFormElementHelper(): void
+    public function delegatesTheFormElementHelperAndRegistersTheCsrfHelper(): void
     {
         static::assertSame(
-            ['delegators' => [FormElement::class => [FormElementDisableCacheDelegator::class]]],
+            [
+                'delegators' => [FormElement::class => [FormElementDisableCacheDelegator::class]],
+                'factories'  => [FormCsrfDisableCache::class => FormCsrfDisableCacheFactory::class],
+            ],
             (new ConfigProvider())->getViewHelperConfig(),
         );
     }

@@ -71,11 +71,12 @@ final class ConfigProvider
     /**
      * View-helper plugin manager configuration.
      *
-     * Registers a delegator on the FormElement helper so CSRF rendering
-     * fires CacheStrategy::EVENT_DISABLE. The delegator class is only
-     * autoloaded when the FormElement service is requested, which can
-     * only happen when laminas/laminas-form is installed — so this entry
-     * is harmless on form-less consumers.
+     * Registers a delegator on the FormElement helper that routes Csrf
+     * elements to the FormCsrfDisableCache helper, which fires
+     * CacheStrategy::EVENT_DISABLE before rendering. Neither class is
+     * autoloaded until the FormElement service is requested, which can
+     * only happen when laminas/laminas-form is installed — so these entries
+     * are harmless on form-less consumers.
      *
      * @return array<string, mixed>
      */
@@ -86,6 +87,9 @@ final class ConfigProvider
                 FormElement::class => [
                     View\Helper\Delegator\FormElementDisableCacheDelegator::class,
                 ],
+            ],
+            'factories'  => [
+                View\Helper\FormCsrfDisableCache::class => Factory\FormCsrfDisableCacheFactory::class,
             ],
         ];
     }

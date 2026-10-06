@@ -40,7 +40,7 @@ final class FormCsrfDisableCacheFactory
         }
 
         throw new RuntimeException(sprintf(
-            'contenir/cache-laminas-mvc: service "%s" must resolve to a %s; got %s.',
+            'contenir/contenir-cache-laminas-mvc: service "%s" must resolve to a %s; got %s.',
             $id,
             $type,
             get_debug_type($service),

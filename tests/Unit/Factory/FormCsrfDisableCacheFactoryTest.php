@@ -29,15 +29,15 @@ final class FormCsrfDisableCacheFactoryTest extends TestCase
         return [
             'Application'       => [
                 'Application',
-                'contenir/cache-laminas-mvc: service "Application" must resolve to a Laminas\Mvc\ApplicationInterface; got stdClass.',
+                'contenir/contenir-cache-laminas-mvc: service "Application" must resolve to a Laminas\Mvc\ApplicationInterface; got stdClass.',
             ],
             'ViewHelperManager' => [
                 'ViewHelperManager',
-                'contenir/cache-laminas-mvc: service "ViewHelperManager" must resolve to a Psr\Container\ContainerInterface; got stdClass.',
+                'contenir/contenir-cache-laminas-mvc: service "ViewHelperManager" must resolve to a Psr\Container\ContainerInterface; got stdClass.',
             ],
             'formhidden'        => [
                 'formhidden',
-                'contenir/cache-laminas-mvc: service "formhidden" must resolve to a Laminas\Form\View\Helper\FormHidden; got stdClass.',
+                'contenir/contenir-cache-laminas-mvc: service "formhidden" must resolve to a Laminas\Form\View\Helper\FormHidden; got stdClass.',
             ],
         ];
     }

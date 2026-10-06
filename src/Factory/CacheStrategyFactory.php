@@ -46,7 +46,7 @@ final class CacheStrategyFactory
         }
 
         throw new RuntimeException(sprintf(
-            'contenir/cache-laminas-mvc: service "%s" must resolve to a Laminas\Cache\Storage\StorageInterface; got %s.',
+            'contenir/contenir-cache-laminas-mvc: service "%s" must resolve to a Laminas\Cache\Storage\StorageInterface; got %s.',
             $serviceId,
             get_debug_type($storage),
         ));
@@ -80,7 +80,7 @@ final class CacheStrategyFactory
     {
         if (! is_string($serviceId) || '' === $serviceId) {
             throw new RuntimeException(
-                'contenir/cache-laminas-mvc: config[pagecache][cache] must be the service ID of a'
+                'contenir/contenir-cache-laminas-mvc: config[pagecache][cache] must be the service ID of a'
                     . ' Laminas\Cache\Storage\StorageInterface backend.',
             );
         }

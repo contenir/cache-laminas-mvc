@@ -85,7 +85,7 @@ final class CacheStrategyFactoryTest extends TestCase
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
-            'contenir/cache-laminas-mvc: config[pagecache][cache] must be the service ID of a'
+            'contenir/contenir-cache-laminas-mvc: config[pagecache][cache] must be the service ID of a'
                 . ' Laminas\\Cache\\Storage\\StorageInterface backend.',
         );
 

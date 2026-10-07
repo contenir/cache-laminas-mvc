@@ -22,7 +22,7 @@ request path.
 ## Install
 
 ```bash
-composer require contenir/contenir-page-cache-laminas-mvc
+composer require contenir/contenir-page-cache-laminas-mvc:^2.0@RC
 ```
 
 Requires PHP 8.3, 8.4 or 8.5, laminas-mvc 3.7+, laminas-cache 3.12+ and

@@ -10,11 +10,15 @@
 | laminas/laminas-servicemanager | ^3.0 \|\| ^4.0 | ^3.22 \|\| ^4.0 |
 
 ```bash
-composer require contenir/cache-laminas-mvc:^2.0
+composer remove contenir/cache-laminas-mvc \
+  && composer require contenir/contenir-page-cache-laminas-mvc:^2.0@RC
 ```
 
-Sites that only configure the module (`pagecache` and `events` config) need no
-code changes. The breaks below affect code that extends or calls the classes
+2.0 is published as `contenir/contenir-page-cache-laminas-mvc`, and the
+namespace and module name move from `Contenir\Cache\Laminas\Mvc` to
+`Contenir\PageCache\Laminas\Mvc`; see
+[UPGRADE-page-cache.md](UPGRADE-page-cache.md). Beyond that, sites that only
+configure the module (`pagecache` and `events` config) need no code changes. The breaks below affect code that extends or calls the classes
 directly. Projects that must stay on PHP 8.1 or 8.2 can keep using `^0.3`,
 maintained on the `0.x` branch.
 
@@ -86,15 +90,10 @@ the original `FormElement` helper (before: an error on helper creation). When
 the delegated factory does not build a `FormElement`, it throws
 `UnexpectedValueException` (before: a `TypeError`).
 
-## Package renamed in 2.2
+## Package renamed
 
-From 2.2, the package is published as `contenir/contenir-cache-laminas-mvc`.
-It declares `replace` for `contenir/cache-laminas-mvc`, so the two can never
-be installed together. Switch the requirement:
-
-```bash
-composer remove contenir/cache-laminas-mvc && composer require contenir/contenir-cache-laminas-mvc:^2.2
-```
-
-No code changes are needed: namespaces, classes and the module name are
-unchanged.
+2.0 is published as `contenir/contenir-page-cache-laminas-mvc`. It declares
+`conflict` with `contenir/cache-laminas-mvc` and
+`contenir/contenir-cache-laminas-mvc`, so old and new can never be installed
+together. See [UPGRADE-page-cache.md](UPGRADE-page-cache.md) for the Composer,
+module, settings and code changes.

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Contenir\PageCache\Laminas\Mvc\Tests\Trait;
 
+use Contenir\PageCache\CacheControl;
 use Contenir\PageCache\Laminas\Mvc\Listener\CacheStrategy;
 use Contenir\PageCache\Laminas\Mvc\Module;
+use Contenir\PageCache\Repository\InMemoryRepository;
 use Laminas\Cache\Storage\Adapter\Memory;
 use Laminas\EventManager\EventManager;
 use Laminas\EventManager\SharedEventManager;
@@ -32,7 +34,7 @@ trait CachingApplicationTrait
         $this->listener = (new CacheStrategy([
             Application::class => [MvcEvent::EVENT_DISPATCH => -100, MvcEvent::EVENT_FINISH => 100],
         ], sapi: 'fpm-fcgi'))->setCache($this->storage)
-            ->setOptions(['cache' => true]);
+            ->setRepository(new InMemoryRepository(CacheControl::enabled()));
 
         (new Module())->attachListener($this->events, $this->listener);
     }

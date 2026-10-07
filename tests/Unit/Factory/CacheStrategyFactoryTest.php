@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace Contenir\PageCache\Laminas\Mvc\Tests\Unit\Factory;
 
+use Contenir\PageCache\CacheControl;
+use Contenir\PageCache\CacheControlRepositoryInterface;
 use Contenir\PageCache\Laminas\Mvc\Factory\CacheStrategyFactory;
+use Contenir\PageCache\Laminas\Mvc\Factory\LayeredFileRepositoryFactory;
 use Contenir\PageCache\Laminas\Mvc\Listener\CacheStrategy;
 use Contenir\PageCache\Laminas\Mvc\Tests\TestAsset\Container\InMemoryContainer;
+use Contenir\PageCache\Repository\InMemoryRepository;
+use Contenir\PageCache\Repository\LayeredFileRepository;
 use Laminas\Authentication\AuthenticationServiceInterface;
 use Laminas\Cache\Storage\StorageInterface;
 use Laminas\Mvc\Application;
@@ -16,6 +21,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use stdClass;
+
+use function getcwd;
 
 #[Group('unit')]
 #[Group('cache')]
@@ -37,6 +44,15 @@ final class CacheStrategyFactoryTest extends TestCase
         ];
     }
 
+    /**
+     * The repository the factory builds when the container registers none and
+     * `pagecache.file` is not set.
+     */
+    private static function defaultRepository(CacheControl $defaults = new CacheControl(false)): LayeredFileRepository
+    {
+        return new LayeredFileRepository(getcwd() . '/' . LayeredFileRepositoryFactory::DEFAULT_FILE, $defaults);
+    }
+
     #[Test]
     public function buildsTheListenerFromEventsOptionsAndRoutes(): void
     {
@@ -56,8 +72,30 @@ final class CacheStrategyFactoryTest extends TestCase
 
         static::assertEquals(
             (new CacheStrategy([Application::class => ['dispatch' => -100, 'finish' => 100]]))->setCache($storage)
-                ->setOptions(['cache' => true, 'ttl' => 600])
-                ->setRoutes(['^/api' => ['cache' => false]]),
+                ->setRepository(self::defaultRepository(
+                    new CacheControl(true, ['ttl' => 600], ['^/api' => ['cache' => false]]),
+                )),
+            $listener,
+        );
+    }
+
+    #[Test]
+    public function readsCacheStateFromTheRepositoryTheContainerRegisters(): void
+    {
+        $storage    = $this->createStub(StorageInterface::class);
+        $repository = new InMemoryRepository(CacheControl::enabled());
+
+        $listener = (new CacheStrategyFactory())(new InMemoryContainer([
+            'config'                               => [
+                'pagecache' => ['cache' => 'cache.page', 'options' => ['cache' => false]],
+            ],
+            'cache.page'                           => $storage,
+            CacheControlRepositoryInterface::class => $repository,
+        ]));
+
+        static::assertEquals(
+            (new CacheStrategy([]))->setCache($storage)
+                ->setRepository($repository),
             $listener,
         );
     }
@@ -121,8 +159,16 @@ final class CacheStrategyFactoryTest extends TestCase
 
         static::assertEquals(
             (new CacheStrategy([Application::class => ['dispatch' => 1], 'Other' => []]))->setCache($storage)
-                ->setOptions(['cache' => true])
-                ->setRoutes(['^/api' => ['cache' => false], 404 => ['cache' => false]]),
+                ->setRepository(self::defaultRepository(
+                    new CacheControl(
+                        true,
+                        [],
+                        [
+                            '^/api' => ['cache' => false],
+                            '404'   => ['cache' => false],
+                        ],
+                    ),
+                )),
             $listener,
         );
     }
@@ -141,6 +187,7 @@ final class CacheStrategyFactoryTest extends TestCase
 
         static::assertEquals(
             (new CacheStrategy([]))->setCache($storage)
+                ->setRepository(self::defaultRepository())
                 ->setAuthenticationService($auth),
             $listener,
         );

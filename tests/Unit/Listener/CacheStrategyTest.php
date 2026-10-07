@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Contenir\PageCache\Laminas\Mvc\Tests\Unit\Listener;
 
+use Contenir\PageCache\CacheControl;
 use Contenir\PageCache\Laminas\Mvc\Listener\CacheStrategy;
 use Contenir\PageCache\Laminas\Mvc\Tests\TestAsset\Identity\RoleIdentity;
 use Contenir\PageCache\Laminas\Mvc\Tests\Trait\MvcEventTrait;
+use Contenir\PageCache\Repository\InMemoryRepository;
 use InvalidArgumentException;
 use Laminas\Authentication\AuthenticationServiceInterface;
 use Laminas\Cache\Exception\RuntimeException as CacheRuntimeException;
@@ -32,8 +34,11 @@ use stdClass;
 use function array_keys;
 use function array_map;
 use function array_unique;
+use function filter_var;
 use function md5;
 use function sprintf;
+
+use const FILTER_VALIDATE_BOOLEAN;
 
 #[Group('unit')]
 #[Group('cache')]
@@ -162,6 +167,18 @@ final class CacheStrategyTest extends TestCase
         (new CacheStrategy([Application::class => ['dispatch' => 1]]))->attach($events);
     }
 
+    #[Test]
+    public function cachesNothingWithoutARepository(): void
+    {
+        $storage = $this->createMock(StorageInterface::class);
+        $storage->expects($this->never())->method('hasItem');
+
+        static::assertFalse(
+            (new CacheStrategy([], sapi: 'fpm-fcgi'))->setCache($storage)
+                ->onDispatch($this->event($this->request())),
+        );
+    }
+
     /**
      * @param array<string, mixed> $options
      * @param array<array-key, array<string, mixed>> $routes
@@ -230,9 +247,10 @@ final class CacheStrategyTest extends TestCase
     public function doesNothingWithoutACacheStorage(): void
     {
         static::assertFalse(
-            (new CacheStrategy([], sapi: 'fpm-fcgi'))->setOptions(['cache' => true])->onDispatch(
-                $this->event($this->request()),
-            ),
+            (new CacheStrategy([], sapi: 'fpm-fcgi'))->setRepository(new InMemoryRepository(CacheControl::enabled()))
+                ->onDispatch(
+                    $this->event($this->request()),
+                ),
         );
     }
 
@@ -376,26 +394,6 @@ final class CacheStrategyTest extends TestCase
     }
 
     #[Test]
-    public function keepsEarlierRoutesWhenMoreAreAdded(): void
-    {
-        $keys    = [];
-        $storage = $this->createStub(StorageInterface::class);
-        $storage->method('hasItem')
-            ->willReturnCallback(static function (string $key) use (&$keys): bool {
-                $keys[] = $key;
-
-                return false;
-            });
-        $listener = $this->listener($storage, ['cache' => true], ['^/a' => ['cache' => false]]);
-        $listener->setRoutes(['^/b' => ['cache' => false]]);
-
-        $listener->onDispatch($this->event($this->request('http://example.com/a')));
-        $listener->onDispatch($this->event($this->request('http://example.com/b')));
-
-        static::assertSame([], $keys);
-    }
-
-    #[Test]
     public function keepsTheStorageTtlWhenNoneIsConfigured(): void
     {
         $options = new AdapterOptions(['ttl' => 30]);
@@ -505,7 +503,7 @@ final class CacheStrategyTest extends TestCase
         $storage = $this->createMock(StorageInterface::class);
         $storage->expects($this->never())->method('hasItem');
         $listener = (new CacheStrategy([]))->setCache($storage)
-            ->setOptions(['cache' => true]);
+            ->setRepository(new InMemoryRepository(CacheControl::enabled()));
 
         static::assertFalse($listener->onDispatch($this->event($this->request())));
     }
@@ -523,6 +521,20 @@ final class CacheStrategyTest extends TestCase
         static::assertFalse(
             $this->listener($storage)->onDispatch($this->event($this->request($uri, $method, $headers))),
         );
+    }
+
+    #[Test]
+    public function readsTheCacheStateAgainOnEveryDispatch(): void
+    {
+        $storage = $this->createMock(StorageInterface::class);
+        $storage->expects($this->once())->method('hasItem')->willReturn(false);
+        $repository = new InMemoryRepository(CacheControl::enabled());
+        $listener   = (new CacheStrategy([], sapi: 'fpm-fcgi'))->setCache($storage)
+            ->setRepository($repository);
+
+        $listener->onDispatch($this->event($this->request()));
+        $repository->save(CacheControl::disabled());
+        $listener->onDispatch($this->event($this->request()));
     }
 
     #[Test]
@@ -744,16 +756,18 @@ final class CacheStrategyTest extends TestCase
 
     /**
      * @param array<string, mixed> $options
-     * @param array<array-key, array<string, mixed>> $routes
+     * @param array<string, array<string, mixed>> $routes
      */
     private function listener(
         StorageInterface $storage,
         array $options = ['cache' => true],
         array $routes = [],
     ): CacheStrategy {
+        $enabled = filter_var($options['cache'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        unset($options['cache']);
+
         return (new CacheStrategy([], sapi: 'fpm-fcgi'))->setCache($storage)
-            ->setOptions($options)
-            ->setRoutes($routes);
+            ->setRepository(new InMemoryRepository(new CacheControl($enabled, $options, $routes)));
     }
 
     /**

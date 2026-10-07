@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Contenir\PageCache\Laminas\Mvc\Factory;
 
+use Contenir\PageCache\CacheControlRepositoryInterface;
 use Contenir\PageCache\Laminas\Mvc\Listener\CacheStrategy;
 use Laminas\Authentication\AuthenticationServiceInterface;
 use Laminas\Cache\Storage\StorageInterface;
@@ -11,7 +12,6 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
 
-use function array_filter;
 use function array_keys;
 use function array_map;
 use function get_debug_type;
@@ -23,10 +23,12 @@ use function sprintf;
  * Factory for the page-cache listener.
  *
  * Pulls per-event attachment config from config[events][CacheStrategy::class]
- * and the cache backend, options and route overrides from config[pagecache].
- * The master enable flag is config[pagecache][options][cache], which is
- * also the key consumed by any admin tool that writes pagecache.local.php
- * to flip caching at runtime.
+ * and the cache backend from config[pagecache][cache]. The cache state comes
+ * from the container's CacheControlRepositoryInterface when one is
+ * registered; otherwise from LayeredFileRepositoryFactory, which re-reads
+ * the admin's file on every request and lays it over
+ * config[pagecache][options] and config[pagecache][routes]. The master enable flag is
+ * config[pagecache][options][cache].
  *
  * Malformed entries are skipped: event identifiers and event names that
  * are not strings, options without a string name, and routes whose
@@ -50,14 +52,6 @@ final class CacheStrategyFactory
             $serviceId,
             get_debug_type($storage),
         ));
-    }
-
-    /**
-     * @return array<array-key, array<string, mixed>>
-     */
-    private static function routes(mixed $routes): array
-    {
-        return array_map(self::stringKeyed(...), array_filter(is_array($routes) ? $routes : [], is_array(...)));
     }
 
     /**
@@ -121,8 +115,11 @@ final class CacheStrategyFactory
             self::stringKeyed(...),
             self::section(self::section($config, 'events'), CacheStrategy::class),
         )))->setCache(self::storage($container, $options['cache'] ?? null))
-            ->setOptions(self::section($options, 'options'))
-            ->setRoutes(self::routes($options['routes'] ?? null));
+            ->setRepository(
+                $container->has(CacheControlRepositoryInterface::class)
+                    ? $container->get(CacheControlRepositoryInterface::class)
+                    : (new LayeredFileRepositoryFactory())($container),
+            );
 
         if ($container->has(AuthenticationServiceInterface::class)) {
             $listener->setAuthenticationService($container->get(AuthenticationServiceInterface::class));

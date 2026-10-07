@@ -6,6 +6,8 @@ namespace Contenir\PageCache\Laminas\Mvc\Listener;
 
 use ArrayIterator;
 use Closure;
+use Contenir\PageCache\CacheControlRepositoryInterface;
+use Contenir\PageCache\Repository\InMemoryRepository;
 use InvalidArgumentException;
 use Laminas\Authentication\AuthenticationServiceInterface;
 use Laminas\Cache\Exception\ExceptionInterface as CacheException;
@@ -22,7 +24,6 @@ use Override;
 use Traversable;
 
 use function array_keys;
-use function array_replace;
 use function header_remove;
 use function headers_sent;
 use function in_array;
@@ -43,10 +44,12 @@ use const PHP_SAPI;
 /**
  * Page Caching Strategy Listener.
  *
- * The master enable/disable is driven by the standard pagecache config:
- * `pagecache.options.cache` set to `false` (per-environment, per-route, or
- * via an admin tool writing pagecache.local.php) bypasses the cache
- * entirely.
+ * The cache state comes from a contenir/contenir-page-cache
+ * CacheControlRepositoryInterface, read on every dispatch: its master switch
+ * (`pagecache.options.cache`), the other `pagecache.options.*` and the
+ * `pagecache.routes` overrides. CacheStrategyFactory supplies a
+ * LayeredFileRepository, so an admin tool writing pagecache.local.php takes
+ * effect on the next request. With no repository set, caching is off.
  *
  * Purging is *not* this listener's responsibility. The consuming admin
  * tool talks to the cache storage backend directly (same Site config,
@@ -80,29 +83,7 @@ final class CacheStrategy implements ListenerAggregateInterface
      */
     private array $activeOptions = [];
 
-    /**
-     * @var array<string, mixed>
-     */
-    private array $options = [
-        'cache_with_query'     => false,
-        'cache_with_post'      => false,
-        'cache_with_session'   => false,
-        'cache_with_files'     => false,
-        'cache_with_cookie'    => false,
-        'make_id_with_query'   => false,
-        'make_id_with_post'    => false,
-        'make_id_with_session' => false,
-        'make_id_with_files'   => false,
-        'make_id_with_cookie'  => false,
-        'cache'                => false,
-        'ttl'                  => null,
-        'priority'             => null,
-    ];
-
-    /**
-     * @var array<array-key, array<string, mixed>>
-     */
-    private array $routes = [];
+    private CacheControlRepositoryInterface $repository;
 
     private ?AuthenticationServiceInterface $authService = null;
 
@@ -123,7 +104,9 @@ final class CacheStrategy implements ListenerAggregateInterface
     public function __construct(
         private array $configuration,
         private readonly string $sapi = PHP_SAPI,
-    ) {}
+    ) {
+        $this->repository = new InMemoryRepository();
+    }
 
     /**
      * Clear PHP's pending response headers for a given name.
@@ -462,22 +445,9 @@ final class CacheStrategy implements ListenerAggregateInterface
         return $this;
     }
 
-    /**
-     * @param array<string, mixed> $options
-     */
-    public function setOptions(array $options): static
+    public function setRepository(CacheControlRepositoryInterface $repository): static
     {
-        $this->options = array_replace($this->options, $options);
-
-        return $this;
-    }
-
-    /**
-     * @param array<array-key, array<string, mixed>> $routes
-     */
-    public function setRoutes(array $routes): static
-    {
-        $this->routes = array_replace($this->routes, $routes);
+        $this->repository = $repository;
 
         return $this;
     }
@@ -551,20 +521,17 @@ final class CacheStrategy implements ListenerAggregateInterface
      */
     private function resolveOptions(string $path): array
     {
-        $lastMatchingRegexp = null;
-        foreach (array_keys($this->routes) as $regexp) {
+        $control   = $this->repository->get();
+        $overrides = [];
+        foreach ($control->routes as $regexp => $routeOverrides) {
             if (1 !== preg_match("`{$regexp}`", $path)) {
                 continue;
             }
 
-            $lastMatchingRegexp = $regexp;
+            $overrides = $routeOverrides;
         }
 
-        if (null === $lastMatchingRegexp) {
-            return $this->options;
-        }
-
-        return array_replace($this->options, $this->routes[$lastMatchingRegexp] ?? []);
+        return [...$control->options, 'cache' => $control->enabled, ...$overrides];
     }
 
     /**

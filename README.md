@@ -1,19 +1,23 @@
 # contenir/contenir-page-cache-laminas-mvc
 
-Formerly `contenir/cache-laminas-mvc`; the old package is abandoned in favour of this one.
+Formerly `contenir/contenir-cache-laminas-mvc`, and before that `contenir/cache-laminas-mvc`.
+See [UPGRADE-page-cache.md](UPGRADE-page-cache.md) to move from either.
 
 [![Continuous Integration](https://github.com/contenir/contenir-cache-laminas-mvc/actions/workflows/continuous-integration.yml/badge.svg)](https://github.com/contenir/contenir-cache-laminas-mvc/actions/workflows/continuous-integration.yml)
 [![codecov](https://codecov.io/gh/contenir/contenir-cache-laminas-mvc/graph/badge.svg)](https://codecov.io/gh/contenir/contenir-cache-laminas-mvc)
 
 Laminas MVC page-cache adapter for [Contenir CMS](https://github.com/contenir).
-It stands alone: it stores pages through `laminas/laminas-cache` and does not
-require [`contenir/contenir-page-cache`](https://github.com/contenir/contenir-page-cache).
+It stores pages through `laminas/laminas-cache` and reads its settings as a
+`CacheControl` from
+[`contenir/contenir-page-cache`](https://github.com/contenir/contenir-page-cache),
+the same state the Mezzio adapter and the Contenir admin use.
 
 A page-cache `MvcEvent` listener with the legacy `cache_with_*` /
 `make_id_with_*` shape preserved, driven by the standard `pagecache`
-config key. Admin-side toggles (`pagecache.options.cache`,
-per-route overrides) ride in via the merged Laminas/Mezzio config — no
-in-band purge signal on the request path.
+config key. Admin-side toggles (`pagecache.options.cache`, per-route
+overrides) are read from the admin's `pagecache.local.php` on every
+request, so they apply immediately — no in-band purge signal on the
+request path.
 
 ## Install
 
@@ -35,8 +39,9 @@ The Module is auto-registered by `laminas/laminas-component-installer`.
 | `Module` | Laminas module: `getConfig()` returns the `ConfigProvider` config; `onBootstrap()` attaches the listener. `attachListener($events, $listener)` does the attaching. |
 | `ConfigProvider` | `__invoke()`, `getDependencies()`, `getPageCacheDefaults()`, `getViewHelperConfig()`. |
 | `Factory\CacheStrategyFactory` | Builds the listener from `config[events][CacheStrategy::class]` and `config[pagecache]`. |
+| `Factory\LayeredFileRepositoryFactory` | Builds the `LayeredFileRepository` the listener reads when the container registers no `CacheControlRepositoryInterface`: `config[pagecache][file]` over `config[pagecache][options]` and `[routes]`. `DEFAULT_FILE` is `config/autoload/pagecache.local.php`. |
 | `Factory\FormCsrfDisableCacheFactory` | Builds `View\Helper\FormCsrfDisableCache` from the `Application` event manager and the `formhidden` helper. |
-| `Listener\CacheStrategy` | The listener: `attach()`, `detach()`, `onDispatch()`, `onFinish()`, `disable()`, `setCache()`, `setOptions()`, `setRoutes()`, `setAuthenticationService()`, and the `EVENT_DISABLE` constant. |
+| `Listener\CacheStrategy` | The listener: `attach()`, `detach()`, `onDispatch()`, `onFinish()`, `disable()`, `setCache()`, `setRepository()`, `setAuthenticationService()`, and the `EVENT_DISABLE` constant. |
 | `View\Helper\Delegator\FormElementDisableCacheDelegator` | Maps `Csrf` elements on the `FormElement` helper to `View\Helper\FormCsrfDisableCache`. |
 | `View\Helper\FormCsrfDisableCache` | Fires `EVENT_DISABLE`, then renders a `Csrf` element through `formhidden`. |
 
@@ -72,6 +77,10 @@ return [
         'routes'  => [
             '/api.*' => ['cache' => false],
         ],
+
+        // Optional: the admin's override file, when it isn't
+        // config/autoload/pagecache.local.php under the application root.
+        // 'file' => __DIR__ . '/pagecache.local.php',
     ],
 
     // Shared-event-manager attachments. The keys are SharedEventManager
@@ -102,9 +111,19 @@ an `InvalidArgumentException` from `attach()`.
 `options.ttl` may be an integer or numeric string; anything else leaves the
 storage's own TTL in place.
 
-A separate `pagecache.local.php` (written by the admin) is merged on top
-in the standard Laminas config-aggregator order, so the operator's
-defaults are preserved when the admin flips the master toggle.
+The admin's `pagecache.local.php` is read on every request through
+contenir-page-cache's `Repository\LayeredFileRepository` and laid over the
+defaults above, so a change applies on the next request even with a cached
+merged config:
+
+- a setting absent from the file inherits the default here, so flipping the
+  master toggle keeps the operator's other options;
+- if the file lists `routes`, they replace `pagecache.routes`, because the
+  admin manages routes as one list.
+
+To supply the state another way, register a
+`Contenir\PageCache\CacheControlRepositoryInterface` service; the factory
+uses it instead.
 
 The Module attaches the listener for you on bootstrap — there's nothing
 to wire in your Site's own `Application\Module`.

@@ -4,6 +4,38 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Renamed from `contenir/contenir-cache-laminas-mvc` to
+  `contenir/contenir-page-cache-laminas-mvc`, and the namespace and Laminas
+  module name from `Contenir\Cache\Laminas\Mvc` to
+  `Contenir\PageCache\Laminas\Mvc`, following the core package's rename to
+  `contenir/contenir-page-cache`. No `class_alias` shims are shipped. See
+  [UPGRADE-page-cache.md](UPGRADE-page-cache.md).
+- Declares `conflict` (any version) with `contenir/cache-laminas-mvc` and
+  `contenir/contenir-cache-laminas-mvc` instead of replacing them, because
+  the namespace change means it cannot stand in for either.
+- Requires `contenir/contenir-page-cache` `^2.0`. `CacheStrategy` reads its
+  settings as a `CacheControl` through a `CacheControlRepositoryInterface`
+  on every dispatch, instead of parsing `pagecache.options` and
+  `pagecache.routes` itself, so it shares one implementation with the
+  Mezzio adapter and the admin. `setOptions()` and `setRoutes()` are
+  replaced by `setRepository()`.
+- The factory reads the admin's `pagecache.local.php` on every request
+  through contenir-page-cache's `LayeredFileRepository`, so admin changes
+  apply immediately even with a cached merged config. When the file lists
+  `routes`, they now replace `pagecache.routes` instead of merging with
+  them, as in the Mezzio adapter and the admin screen.
+
+### Added
+
+- `Factory\LayeredFileRepositoryFactory`, and the `pagecache.file` setting
+  for an admin file other than `config/autoload/pagecache.local.php`. A
+  `CacheControlRepositoryInterface` service in the container takes
+  precedence.
+
 ## [2.2.0] - 2026-10-05
 
 ### Changed

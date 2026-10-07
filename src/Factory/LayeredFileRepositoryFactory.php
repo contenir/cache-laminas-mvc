@@ -17,8 +17,12 @@ use function is_string;
  * registers no CacheControlRepositoryInterface of its own.
  *
  * The admin's file is config[pagecache][file], or DEFAULT_FILE under the
- * working directory (the application root). It is re-read on every request
- * and laid over config[pagecache][options] and config[pagecache][routes].
+ * working directory. The Laminas skeleton's public/index.php changes to the
+ * application root, so that is usually the same place; set
+ * config[pagecache][file] where it is not. The file is re-read on every
+ * request, including cache hits, and laid over config[pagecache][options]
+ * and config[pagecache][routes]. A missing or unreadable file, or sections
+ * that are not arrays, leave the site's settings in force.
  *
  * @api
  */

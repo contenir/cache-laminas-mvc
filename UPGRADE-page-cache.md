@@ -32,8 +32,11 @@ modules by hand, replace `Contenir\Cache\Laminas\Mvc` with
 The `pagecache` keys are unchanged. Two behaviours differ:
 
 - The admin's `pagecache.local.php` is now read on every request, so a change
-  applies immediately even with a cached merged config. If it lives somewhere
-  other than `config/autoload/pagecache.local.php`, set `pagecache.file`.
+  applies immediately even with a cached merged config. The default path is
+  `config/autoload/pagecache.local.php` under the working directory, which is
+  the application root when `public/index.php` changes to it, as the Laminas
+  skeleton does. Otherwise, or if the file lives elsewhere, set
+  `pagecache.file` to an absolute path.
 - If that file lists `routes`, they replace `pagecache.routes` instead of
   merging with them, as the Contenir admin presents them. A site that kept
   extra routes in its own config alongside admin-managed routes should move

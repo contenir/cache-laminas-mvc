@@ -258,7 +258,7 @@ listener is wrapping.
 
 ## Development
 
-The QA toolchain is [php-db/phpdb-qa-tools](https://github.com/php-db/phpdb-qa-tools).
+The QA toolchain is [contenir/contenir-qa-tools](https://github.com/contenir/contenir-qa-tools).
 [Mago](https://mago.carthage.software/) is a standalone binary, installed
 separately (`brew install mago`).
 

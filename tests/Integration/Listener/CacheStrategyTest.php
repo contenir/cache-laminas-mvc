@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\Tests\Integration\Listener;
+namespace Contenir\PageCache\Laminas\Mvc\Tests\Integration\Listener;
 
-use Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy;
-use Contenir\Cache\Laminas\Mvc\Tests\Trait\CachingApplicationTrait;
-use Contenir\Cache\Laminas\Mvc\Tests\Trait\MvcEventTrait;
+use Contenir\PageCache\Laminas\Mvc\Listener\CacheStrategy;
+use Contenir\PageCache\Laminas\Mvc\Tests\Trait\CachingApplicationTrait;
+use Contenir\PageCache\Laminas\Mvc\Tests\Trait\MvcEventTrait;
 use Laminas\Http\PhpEnvironment\Response;
 use Override;
 use PHPUnit\Framework\Attributes\Group;

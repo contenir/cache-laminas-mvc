@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\Tests\Unit\Factory;
+namespace Contenir\PageCache\Laminas\Mvc\Tests\Unit\Factory;
 
-use Contenir\Cache\Laminas\Mvc\Factory\FormCsrfDisableCacheFactory;
-use Contenir\Cache\Laminas\Mvc\Tests\TestAsset\Container\InMemoryContainer;
-use Contenir\Cache\Laminas\Mvc\View\Helper\FormCsrfDisableCache;
+use Contenir\PageCache\Laminas\Mvc\Factory\FormCsrfDisableCacheFactory;
+use Contenir\PageCache\Laminas\Mvc\Tests\TestAsset\Container\InMemoryContainer;
+use Contenir\PageCache\Laminas\Mvc\View\Helper\FormCsrfDisableCache;
 use Laminas\EventManager\EventManagerInterface;
 use Laminas\Form\View\Helper\FormHidden;
 use Laminas\Mvc\ApplicationInterface;
@@ -29,15 +29,15 @@ final class FormCsrfDisableCacheFactoryTest extends TestCase
         return [
             'Application'       => [
                 'Application',
-                'contenir/contenir-cache-laminas-mvc: service "Application" must resolve to a Laminas\Mvc\ApplicationInterface; got stdClass.',
+                'contenir/contenir-page-cache-laminas-mvc: service "Application" must resolve to a Laminas\Mvc\ApplicationInterface; got stdClass.',
             ],
             'ViewHelperManager' => [
                 'ViewHelperManager',
-                'contenir/contenir-cache-laminas-mvc: service "ViewHelperManager" must resolve to a Psr\Container\ContainerInterface; got stdClass.',
+                'contenir/contenir-page-cache-laminas-mvc: service "ViewHelperManager" must resolve to a Psr\Container\ContainerInterface; got stdClass.',
             ],
             'formhidden'        => [
                 'formhidden',
-                'contenir/contenir-cache-laminas-mvc: service "formhidden" must resolve to a Laminas\Form\View\Helper\FormHidden; got stdClass.',
+                'contenir/contenir-page-cache-laminas-mvc: service "formhidden" must resolve to a Laminas\Form\View\Helper\FormHidden; got stdClass.',
             ],
         ];
     }

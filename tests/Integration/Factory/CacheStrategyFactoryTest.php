@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\Tests\Integration\Factory;
+namespace Contenir\PageCache\Laminas\Mvc\Tests\Integration\Factory;
 
-use Contenir\Cache\Laminas\Mvc\ConfigProvider;
-use Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy;
+use Contenir\PageCache\CacheControl;
+use Contenir\PageCache\Laminas\Mvc\ConfigProvider;
+use Contenir\PageCache\Laminas\Mvc\Factory\LayeredFileRepositoryFactory;
+use Contenir\PageCache\Laminas\Mvc\Listener\CacheStrategy;
+use Contenir\PageCache\Repository\LayeredFileRepository;
 use Laminas\Authentication\AuthenticationService;
 use Laminas\Authentication\AuthenticationServiceInterface;
 use Laminas\Cache\Storage\Adapter\Memory;
@@ -16,10 +19,27 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+use function getcwd;
+
 #[Group('integration')]
 #[Group('cache')]
 final class CacheStrategyFactoryTest extends TestCase
 {
+    /**
+     * The repository built from the merged module defaults and site options,
+     * over the default admin file.
+     */
+    private static function repository(): LayeredFileRepository
+    {
+        $options = (new ConfigProvider())->getPageCacheDefaults()['options'];
+        unset($options['cache']);
+
+        return new LayeredFileRepository(
+            getcwd() . '/' . LayeredFileRepositoryFactory::DEFAULT_FILE,
+            new CacheControl(true, [...$options, 'ttl' => 600], ['^/api' => ['cache' => false]]),
+        );
+    }
+
     #[Test]
     public function buildsTheListenerFromMergedModuleAndSiteConfiguration(): void
     {
@@ -28,12 +48,7 @@ final class CacheStrategyFactoryTest extends TestCase
 
         static::assertEquals(
             (new CacheStrategy([Application::class => ['dispatch' => -100, 'finish' => 100]]))->setCache($storage)
-                ->setOptions([
-                    ...(new ConfigProvider())->getPageCacheDefaults()['options'],
-                    'cache' => true,
-                    'ttl'   => 600,
-                ])
-                ->setRoutes(['^/api' => ['cache' => false]]),
+                ->setRepository(self::repository()),
             $services->get(CacheStrategy::class),
         );
     }
@@ -46,12 +61,7 @@ final class CacheStrategyFactoryTest extends TestCase
 
         static::assertEquals(
             (new CacheStrategy([Application::class => ['dispatch' => -100, 'finish' => 100]]))->setCache($storage)
-                ->setOptions([
-                    ...(new ConfigProvider())->getPageCacheDefaults()['options'],
-                    'cache' => true,
-                    'ttl'   => 600,
-                ])
-                ->setRoutes(['^/api' => ['cache' => false]])
+                ->setRepository(self::repository())
                 ->setAuthenticationService($auth),
             $this->services($storage, [AuthenticationServiceInterface::class => $auth])->get(CacheStrategy::class),
         );

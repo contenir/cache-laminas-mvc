@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\Tests\TestAsset\Container;
+namespace Contenir\PageCache\Laminas\Mvc\Tests\TestAsset\Container;
 
 use Override;
 use Psr\Container\ContainerInterface;

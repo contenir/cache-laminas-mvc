@@ -18,7 +18,7 @@
         // SAPI that PHPUnit runs under never keeps (headers_list() is always
         // empty there), so dropping the call or its caller cannot be observed.
         "FunctionCallRemoval": {
-            "ignore": ["Contenir\\Cache\\Laminas\\Mvc\\Listener\\CacheStrategy::clearEmittedHeaders"]
+            "ignore": ["Contenir\\PageCache\\Laminas\\Mvc\\Listener\\CacheStrategy::clearEmittedHeaders"]
         },
         "MethodCallRemoval": {
             "ignoreSourceCodeByRegex": ["self::clearEmittedHeaders\\('Pragma', 'Expires'\\);"]
@@ -37,10 +37,10 @@
         // 0..n either way; and after the loop the fall-through only reaches a
         // null HeaderInterface check that does nothing for an ArrayIterator.
         "FalseValue": {
-            "ignore": ["Contenir\\Cache\\Laminas\\Mvc\\Listener\\CacheStrategy::stripHeader"]
+            "ignore": ["Contenir\\PageCache\\Laminas\\Mvc\\Listener\\CacheStrategy::stripHeader"]
         },
         "ReturnRemoval": {
-            "ignore": ["Contenir\\Cache\\Laminas\\Mvc\\Listener\\CacheStrategy::stripHeader"],
+            "ignore": ["Contenir\\PageCache\\Laminas\\Mvc\\Listener\\CacheStrategy::stripHeader"],
             // Without a matching route the fall-through looks up
             // $this->routes[null], i.e. the "" pattern; that pattern matches
             // every path, so it cannot exist unmatched and the result is the

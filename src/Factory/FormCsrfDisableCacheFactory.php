@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\Factory;
+namespace Contenir\PageCache\Laminas\Mvc\Factory;
 
-use Contenir\Cache\Laminas\Mvc\View\Helper\FormCsrfDisableCache;
+use Contenir\PageCache\Laminas\Mvc\View\Helper\FormCsrfDisableCache;
 use Laminas\Form\View\Helper\FormHidden;
 use Laminas\Mvc\ApplicationInterface;
 use Psr\Container\ContainerExceptionInterface;
@@ -40,7 +40,7 @@ final class FormCsrfDisableCacheFactory
         }
 
         throw new RuntimeException(sprintf(
-            'contenir/contenir-cache-laminas-mvc: service "%s" must resolve to a %s; got %s.',
+            'contenir/contenir-page-cache-laminas-mvc: service "%s" must resolve to a %s; got %s.',
             $id,
             $type,
             get_debug_type($service),

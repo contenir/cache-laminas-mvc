@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\View\Helper\Delegator;
+namespace Contenir\PageCache\Laminas\Mvc\View\Helper\Delegator;
 
-use Contenir\Cache\Laminas\Mvc\View\Helper\FormCsrfDisableCache;
+use Contenir\PageCache\Laminas\Mvc\View\Helper\FormCsrfDisableCache;
 use Laminas\Form\Element\Csrf;
 use Laminas\Form\View\Helper\FormElement;
 use Laminas\Mvc\ApplicationInterface;

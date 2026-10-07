@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\Tests\Unit\View\Helper\Delegator;
+namespace Contenir\PageCache\Laminas\Mvc\Tests\Unit\View\Helper\Delegator;
 
-use Contenir\Cache\Laminas\Mvc\Tests\TestAsset\Container\InMemoryContainer;
-use Contenir\Cache\Laminas\Mvc\View\Helper\Delegator\FormElementDisableCacheDelegator;
-use Contenir\Cache\Laminas\Mvc\View\Helper\FormCsrfDisableCache;
+use Contenir\PageCache\Laminas\Mvc\Tests\TestAsset\Container\InMemoryContainer;
+use Contenir\PageCache\Laminas\Mvc\View\Helper\Delegator\FormElementDisableCacheDelegator;
+use Contenir\PageCache\Laminas\Mvc\View\Helper\FormCsrfDisableCache;
 use Laminas\Form\Element\Csrf;
 use Laminas\Form\View\Helper\FormElement;
 use Laminas\Mvc\ApplicationInterface;

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\Tests\Unit;
+namespace Contenir\PageCache\Laminas\Mvc\Tests\Unit;
 
-use Contenir\Cache\Laminas\Mvc\ConfigProvider;
-use Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy;
-use Contenir\Cache\Laminas\Mvc\Module;
+use Contenir\PageCache\Laminas\Mvc\ConfigProvider;
+use Contenir\PageCache\Laminas\Mvc\Listener\CacheStrategy;
+use Contenir\PageCache\Laminas\Mvc\Module;
 use Laminas\EventManager\EventManagerInterface;
 use Laminas\EventManager\SharedEventManagerInterface;
 use Laminas\Mvc\Application;

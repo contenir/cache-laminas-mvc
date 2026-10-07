@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\Tests\Unit\Listener;
+namespace Contenir\PageCache\Laminas\Mvc\Tests\Unit\Listener;
 
-use Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy;
-use Contenir\Cache\Laminas\Mvc\Tests\TestAsset\Identity\RoleIdentity;
-use Contenir\Cache\Laminas\Mvc\Tests\Trait\MvcEventTrait;
+use Contenir\PageCache\Laminas\Mvc\Listener\CacheStrategy;
+use Contenir\PageCache\Laminas\Mvc\Tests\TestAsset\Identity\RoleIdentity;
+use Contenir\PageCache\Laminas\Mvc\Tests\Trait\MvcEventTrait;
 use InvalidArgumentException;
 use Laminas\Authentication\AuthenticationServiceInterface;
 use Laminas\Cache\Exception\RuntimeException as CacheRuntimeException;

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\Tests\Unit\Factory;
+namespace Contenir\PageCache\Laminas\Mvc\Tests\Unit\Factory;
 
-use Contenir\Cache\Laminas\Mvc\Factory\CacheStrategyFactory;
-use Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy;
-use Contenir\Cache\Laminas\Mvc\Tests\TestAsset\Container\InMemoryContainer;
+use Contenir\PageCache\Laminas\Mvc\Factory\CacheStrategyFactory;
+use Contenir\PageCache\Laminas\Mvc\Listener\CacheStrategy;
+use Contenir\PageCache\Laminas\Mvc\Tests\TestAsset\Container\InMemoryContainer;
 use Laminas\Authentication\AuthenticationServiceInterface;
 use Laminas\Cache\Storage\StorageInterface;
 use Laminas\Mvc\Application;
@@ -85,7 +85,7 @@ final class CacheStrategyFactoryTest extends TestCase
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
-            'contenir/contenir-cache-laminas-mvc: config[pagecache][cache] must be the service ID of a'
+            'contenir/contenir-page-cache-laminas-mvc: config[pagecache][cache] must be the service ID of a'
                 . ' Laminas\\Cache\\Storage\\StorageInterface backend.',
         );
 

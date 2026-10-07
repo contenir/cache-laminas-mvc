@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\Listener;
+namespace Contenir\PageCache\Laminas\Mvc\Listener;
 
 use ArrayIterator;
 use Closure;

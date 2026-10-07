@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\Tests\Integration\Factory;
+namespace Contenir\PageCache\Laminas\Mvc\Tests\Integration\Factory;
 
-use Contenir\Cache\Laminas\Mvc\ConfigProvider;
-use Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy;
+use Contenir\PageCache\Laminas\Mvc\ConfigProvider;
+use Contenir\PageCache\Laminas\Mvc\Listener\CacheStrategy;
 use Laminas\Authentication\AuthenticationService;
 use Laminas\Authentication\AuthenticationServiceInterface;
 use Laminas\Cache\Storage\Adapter\Memory;

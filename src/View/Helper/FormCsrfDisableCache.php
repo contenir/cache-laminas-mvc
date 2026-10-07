@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\View\Helper;
+namespace Contenir\PageCache\Laminas\Mvc\View\Helper;
 
-use Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy;
+use Contenir\PageCache\Laminas\Mvc\Listener\CacheStrategy;
 use Laminas\EventManager\EventManagerInterface;
 use Laminas\Form\ElementInterface;
 use Laminas\Form\View\Helper\FormHidden;

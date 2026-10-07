@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\Tests\Trait;
+namespace Contenir\PageCache\Laminas\Mvc\Tests\Trait;
 
 use Laminas\EventManager\EventManagerInterface;
 use Laminas\Http\PhpEnvironment\Response;

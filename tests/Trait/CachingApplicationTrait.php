@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\Tests\Trait;
+namespace Contenir\PageCache\Laminas\Mvc\Tests\Trait;
 
-use Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy;
-use Contenir\Cache\Laminas\Mvc\Module;
+use Contenir\PageCache\Laminas\Mvc\Listener\CacheStrategy;
+use Contenir\PageCache\Laminas\Mvc\Module;
 use Laminas\Cache\Storage\Adapter\Memory;
 use Laminas\EventManager\EventManager;
 use Laminas\EventManager\SharedEventManager;

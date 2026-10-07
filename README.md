@@ -1,4 +1,4 @@
-# contenir/contenir-cache-laminas-mvc
+# contenir/contenir-page-cache-laminas-mvc
 
 Formerly `contenir/cache-laminas-mvc`; the old package is abandoned in favour of this one.
 
@@ -7,7 +7,7 @@ Formerly `contenir/cache-laminas-mvc`; the old package is abandoned in favour of
 
 Laminas MVC page-cache adapter for [Contenir CMS](https://github.com/contenir).
 It stands alone: it stores pages through `laminas/laminas-cache` and does not
-require [`contenir/contenir-cache`](https://github.com/contenir/contenir-cache).
+require [`contenir/contenir-page-cache`](https://github.com/contenir/contenir-page-cache).
 
 A page-cache `MvcEvent` listener with the legacy `cache_with_*` /
 `make_id_with_*` shape preserved, driven by the standard `pagecache`
@@ -18,7 +18,7 @@ in-band purge signal on the request path.
 ## Install
 
 ```bash
-composer require contenir/contenir-cache-laminas-mvc
+composer require contenir/contenir-page-cache-laminas-mvc
 ```
 
 Requires PHP 8.3, 8.4 or 8.5, laminas-mvc 3.7+, laminas-cache 3.12+ and
@@ -51,7 +51,7 @@ plus per-route overrides:
 ```php
 // config/autoload/pagecache.global.php
 
-use Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy;
+use Contenir\PageCache\Laminas\Mvc\Listener\CacheStrategy;
 
 return [
     'pagecache' => [
@@ -174,7 +174,7 @@ opt out at runtime, fire the event yourself from anywhere in the
 request lifecycle:
 
 ```php
-$em->trigger(\Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy::EVENT_DISABLE);
+$em->trigger(\Contenir\PageCache\Laminas\Mvc\Listener\CacheStrategy::EVENT_DISABLE);
 ```
 
 …or grab the listener service and call `disable()` directly.

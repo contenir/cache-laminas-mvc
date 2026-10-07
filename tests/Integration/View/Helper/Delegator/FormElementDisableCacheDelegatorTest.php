@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\Tests\Integration\View\Helper\Delegator;
+namespace Contenir\PageCache\Laminas\Mvc\Tests\Integration\View\Helper\Delegator;
 
-use Contenir\Cache\Laminas\Mvc\ConfigProvider;
-use Contenir\Cache\Laminas\Mvc\Tests\Trait\CachingApplicationTrait;
-use Contenir\Cache\Laminas\Mvc\Tests\Trait\MvcEventTrait;
+use Contenir\PageCache\Laminas\Mvc\ConfigProvider;
+use Contenir\PageCache\Laminas\Mvc\Tests\Trait\CachingApplicationTrait;
+use Contenir\PageCache\Laminas\Mvc\Tests\Trait\MvcEventTrait;
 use Laminas\Form\ConfigProvider as FormConfigProvider;
 use Laminas\Form\Element\Csrf;
 use Laminas\Form\Element\Text;

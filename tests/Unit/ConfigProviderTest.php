@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\Tests\Unit;
+namespace Contenir\PageCache\Laminas\Mvc\Tests\Unit;
 
-use Contenir\Cache\Laminas\Mvc\ConfigProvider;
-use Contenir\Cache\Laminas\Mvc\Factory\CacheStrategyFactory;
-use Contenir\Cache\Laminas\Mvc\Factory\FormCsrfDisableCacheFactory;
-use Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy;
-use Contenir\Cache\Laminas\Mvc\View\Helper\Delegator\FormElementDisableCacheDelegator;
-use Contenir\Cache\Laminas\Mvc\View\Helper\FormCsrfDisableCache;
+use Contenir\PageCache\Laminas\Mvc\ConfigProvider;
+use Contenir\PageCache\Laminas\Mvc\Factory\CacheStrategyFactory;
+use Contenir\PageCache\Laminas\Mvc\Factory\FormCsrfDisableCacheFactory;
+use Contenir\PageCache\Laminas\Mvc\Listener\CacheStrategy;
+use Contenir\PageCache\Laminas\Mvc\View\Helper\Delegator\FormElementDisableCacheDelegator;
+use Contenir\PageCache\Laminas\Mvc\View\Helper\FormCsrfDisableCache;
 use Laminas\Form\View\Helper\FormElement;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;

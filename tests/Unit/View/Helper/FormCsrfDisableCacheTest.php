@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Cache\Laminas\Mvc\Tests\Unit\View\Helper;
+namespace Contenir\PageCache\Laminas\Mvc\Tests\Unit\View\Helper;
 
-use Contenir\Cache\Laminas\Mvc\Listener\CacheStrategy;
-use Contenir\Cache\Laminas\Mvc\View\Helper\FormCsrfDisableCache;
+use Contenir\PageCache\Laminas\Mvc\Listener\CacheStrategy;
+use Contenir\PageCache\Laminas\Mvc\View\Helper\FormCsrfDisableCache;
 use Laminas\EventManager\EventManagerInterface;
 use Laminas\Form\Element\Csrf;
 use Laminas\Form\View\Helper\FormHidden;

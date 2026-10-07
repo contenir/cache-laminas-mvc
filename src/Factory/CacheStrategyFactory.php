@@ -27,8 +27,8 @@ use function sprintf;
  * from the container's CacheControlRepositoryInterface when one is
  * registered; otherwise from LayeredFileRepositoryFactory, which re-reads
  * the admin's file on every request and lays it over
- * config[pagecache][options] and config[pagecache][routes]. The master enable flag is
- * config[pagecache][options][cache].
+ * config[pagecache][options] and config[pagecache][routes]. The master
+ * enable flag is config[pagecache][options][cache].
  *
  * Malformed entries are skipped: event identifiers and event names that
  * are not strings, options without a string name, and routes whose

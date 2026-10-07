@@ -9,6 +9,7 @@ use Contenir\PageCache\Laminas\Mvc\Factory\LayeredFileRepositoryFactory;
 use Contenir\PageCache\Laminas\Mvc\Tests\TestAsset\Container\InMemoryContainer;
 use Contenir\PageCache\Repository\LayeredFileRepository;
 use Override;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -30,6 +31,25 @@ final class LayeredFileRepositoryFactoryTest extends TestCase
 {
     private string $file;
 
+    /**
+     * Admin-file contents that carry no usable override. Null leaves the file
+     * missing.
+     *
+     * @return array<string, array{?string}>
+     */
+    public static function unusableAdminFileProvider(): array
+    {
+        return [
+            'no file'                           => [null],
+            'file returns no array'             => ['<?php return 42;'],
+            'no pagecache section'              => ["<?php return ['maintenance' => ['enabled' => true]];"],
+            'pagecache is not an array'         => ["<?php return ['pagecache' => 'off'];"],
+            'options and routes are not arrays' => [
+                "<?php return ['pagecache' => ['options' => 'off', 'routes' => 'none']];",
+            ],
+        ];
+    }
+
     #[Test]
     public function inheritsSiteSettingsTheAdminFileDoesNotSet(): void
     {
@@ -37,6 +57,20 @@ final class LayeredFileRepositoryFactoryTest extends TestCase
 
         static::assertEquals(
             new CacheControl(true, ['ttl' => 600, 'cache_with_cookie' => true], ['^/api' => ['cache' => false]]),
+            $this->repository(['cache' => true, 'ttl' => 600], ['^/api' => ['cache' => false]])->get(),
+        );
+    }
+
+    #[Test]
+    #[DataProvider('unusableAdminFileProvider')]
+    public function keepsTheSiteSettingsWhenTheAdminFileHasNoUsableOverrides(?string $contents): void
+    {
+        if (null !== $contents) {
+            file_put_contents($this->file, $contents);
+        }
+
+        static::assertEquals(
+            new CacheControl(true, ['ttl' => 600], ['^/api' => ['cache' => false]]),
             $this->repository(['cache' => true, 'ttl' => 600], ['^/api' => ['cache' => false]])->get(),
         );
     }

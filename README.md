@@ -121,6 +121,15 @@ merged config:
 - if the file lists `routes`, they replace `pagecache.routes`, because the
   admin manages routes as one list.
 
+The default file is `config/autoload/pagecache.local.php` under the working
+directory. The Laminas skeleton's `public/index.php` changes to the
+application root, so that is usually right; if your entry script does not,
+set `pagecache.file` to an absolute path, or the admin's overrides (including
+the master toggle) will never be read. The file is a small PHP array that
+OPcache keeps compiled, so reading it on every request, cache hits included,
+costs an include and a timestamp check. A missing or unreadable file leaves
+the defaults above in force.
+
 To supply the state another way, register a
 `Contenir\PageCache\CacheControlRepositoryInterface` service; the factory
 uses it instead.

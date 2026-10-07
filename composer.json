@@ -79,7 +79,7 @@
       "module": "Contenir\\PageCache\\Laminas\\Mvc"
     },
     "branch-alias": {
-      "dev-main": "2.2.x-dev"
+      "dev-main": "2.0.x-dev"
     }
   },
   "minimum-stability": "dev",

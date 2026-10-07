@@ -4,11 +4,24 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [2.0.0-RC1] - 2026-10-07
+
+The first 2.0 pre-release, published as
+`contenir/contenir-page-cache-laminas-mvc`. The major version marks the move
+to PHP 8.3+, the QA toolchain shared by all Contenir 2.x packages, final
+classes, the rename to `Contenir\PageCache\Laminas\Mvc`, and settings read
+through contenir-page-cache's `CacheControl`. See
+[UPGRADE-2.0.md](UPGRADE-2.0.md) and
+[UPGRADE-page-cache.md](UPGRADE-page-cache.md) for every break.
+
+The 2.0.0, 2.1.0 and 2.2.0 tags published on 2026-10-05 as
+`contenir/contenir-cache-laminas-mvc` were withdrawn and are folded into this
+release.
 
 ### Changed
 
-- Renamed from `contenir/contenir-cache-laminas-mvc` to
+- Renamed from `contenir/cache-laminas-mvc` (and the short-lived
+  `contenir/contenir-cache-laminas-mvc`) to
   `contenir/contenir-page-cache-laminas-mvc`, and the namespace and Laminas
   module name from `Contenir\Cache\Laminas\Mvc` to
   `Contenir\PageCache\Laminas\Mvc`, following the core package's rename to
@@ -28,37 +41,6 @@ adheres to [Semantic Versioning](https://semver.org/).
   apply immediately even with a cached merged config. When the file lists
   `routes`, they now replace `pagecache.routes` instead of merging with
   them, as in the Mezzio adapter and the admin screen.
-
-### Added
-
-- `Factory\LayeredFileRepositoryFactory`, and the `pagecache.file` setting
-  for an admin file other than `config/autoload/pagecache.local.php`. A
-  `CacheControlRepositoryInterface` service in the container takes
-  precedence.
-
-## [2.2.0] - 2026-10-05
-
-### Changed
-
-- Renamed from `contenir/cache-laminas-mvc` to
-  `contenir/contenir-cache-laminas-mvc`. The package declares `replace` for
-  the old name; require `contenir/contenir-cache-laminas-mvc` instead. See
-  [UPGRADE-2.0.md](UPGRADE-2.0.md).
-- The README and composer description no longer describe this package as an
-  adapter for `contenir/cache`: it never required or used that package.
-
-## [2.1.0] - 2026-10-05
-
-### Added
-
-- Infection mutation testing in CI, MSI 100%.
-- `View\Helper\FormCsrfDisableCache` and `Factory\FormCsrfDisableCacheFactory`:
-  the helper fires `CacheStrategy::EVENT_DISABLE`, then renders a `Csrf`
-  element through `formhidden`. `ConfigProvider::getViewHelperConfig()`
-  registers its factory.
-
-### Changed
-
 - `FormElementDisableCacheDelegator` no longer extends laminas-form's
   `@final` `FormElement` helper. It returns the helper the factory built,
   mapping the `Csrf` element class to `FormCsrfDisableCache`, instead of
@@ -67,15 +49,6 @@ adheres to [Semantic Versioning](https://semver.org/).
   `form()` still disables caching for the page, and other elements render
   as before. Type and class mappings configured on the factory-built helper
   are now kept.
-
-## [2.0.0] - 2026-10-05
-
-The major version marks the move to PHP 8.3+, the php-db QA toolchain shared
-by all Contenir 2.x packages, and final classes. See
-[UPGRADE-2.0.md](UPGRADE-2.0.md) for every break.
-
-### Changed
-
 - `LICENSE` names Contenir as the copyright holder, in line with the other
   Contenir packages, and uses the standard MIT wording.
 - Requires PHP 8.3, 8.4 or 8.5, laminas-mvc 3.7+, laminas-cache 3.12+,
@@ -108,7 +81,7 @@ by all Contenir 2.x packages, and final classes. See
   caused a fatal error on every request. Such requests are now not cached.
 - `detach()` left the `EVENT_DISABLE` listener attached.
 - Route patterns that PHP turns into integer keys (such as `'404'`) were
-  renumbered by `array_merge()` in `setRoutes()` and never matched.
+  renumbered and never matched.
 - A stored entry that is not a `Laminas\Http\Response`, or an application
   response that is not a `PhpEnvironment\Response`, caused a fatal error on a
   hit. Both are now treated as a miss.
@@ -118,14 +91,23 @@ by all Contenir 2.x packages, and final classes. See
 
 ### Added
 
+- `Factory\LayeredFileRepositoryFactory`, and the `pagecache.file` setting
+  for an admin file other than `config/autoload/pagecache.local.php`. A
+  `CacheControlRepositoryInterface` service in the container takes
+  precedence.
+- `View\Helper\FormCsrfDisableCache` and `Factory\FormCsrfDisableCacheFactory`:
+  the helper fires `CacheStrategy::EVENT_DISABLE`, then renders a `Csrf`
+  element through `formhidden`. `ConfigProvider::getViewHelperConfig()`
+  registers its factory.
 - Continuous integration on PHP 8.3, 8.4 and 8.5 against lowest, locked and
-  latest dependencies, with coverage reported to Codecov.
+  latest dependencies, with coverage reported to Codecov and Infection
+  mutation testing at MSI 100%.
 - Unit and integration test suites (there were none), with 100% line and
   branch coverage.
 
 ### Removed
 
-- `squizlabs/php_codesniffer`, replaced by Mago via `php-db/phpdb-qa-tools`.
+- `squizlabs/php_codesniffer`, replaced by Mago via contenir-qa-tools.
 
 ## [0.3.0]
 
